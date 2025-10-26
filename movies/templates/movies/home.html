@@ -1,0 +1,62 @@
+{% extends 'movies/base.html' %}
+{% load static %}
+
+{% block head %}
+<link rel="stylesheet" href="{% static 'movies/css/home.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="search-section">
+  <h2>Discover Movies & TV Shows</h2>
+
+  <form method="get" action=".">
+    <input 
+      type="text" 
+      name="q" 
+      placeholder="Search titles..." 
+      value="{{ query|default:'' }}" 
+      required
+    >
+    <button type="submit">Search</button>
+  </form>
+
+  {% if not query %}
+    <p class="search-hint">Start typing to explore ScreenSense!</p>
+  {% endif %}
+</section>
+
+{% if results %}
+<section class="results-container{% if results|length == 1 %} one{% endif %}">
+  <div class="results-grid {% if results|length == 1 %}single{% endif %}">
+    {% for item in results %}
+    <a href="{% url 'details' item.id item.media_type %}" class="card">
+      {% if item.poster %}
+        <img src="{{ item.poster }}" alt="{{ item.title }}" class="poster-img">
+      {% else %}
+        <div class="no-poster">No Image</div>
+      {% endif %}
+
+      <div class="info">
+        <h3>{{ item.title }}</h3>
+
+        {% if item.release %}
+          <p class="year">{{ item.release|slice:":4" }}</p>
+        {% endif %}
+
+        <p class="type">{{ item.media_type|title }}</p>
+
+        {% if item.overview %}
+          <p class="overview">{{ item.overview|truncatewords:20 }}</p>
+        {% else %}
+          <p class="overview">No overview available.</p>
+        {% endif %}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+
+{% elif query %}
+<p class="no-results">No results found for "{{ query }}".</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,139 @@
+.details-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  justify-content: center;
+  align-items: flex-start;
+  margin-top: 4rem;
+}
+
+.poster img {
+  width: 320px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.info {
+  max-width: 600px;
+  text-align: left;
+}
+
+.info h2 {
+  font-size: 2rem;
+  margin-bottom: 0.4rem;
+  color: var(--text-main);
+}
+
+.year,
+.runtime,
+.rating,
+.genres {
+  color: var(--text-muted);
+  margin-bottom: 0.4rem;
+}
+
+.rating {
+  color: #ffd60a;
+  font-weight: 600;
+}
+
+.overview {
+  margin-top: 1rem;
+  line-height: 1.5;
+  color: var(--text-main);
+}
+
+.back-btn {
+  display: inline-block;
+  margin-top: 2rem;
+  padding: 0.7rem 1.4rem;
+  background-color: var(--accent-blue);
+  color: var(--text-main);
+  text-decoration: none;
+  border-radius: 6px;
+  transition: background 0.3s ease;
+}
+
+.back-btn:hover {
+  background-color: var(--accent-hover);
+}
+
+.error {
+  text-align: center;
+  color: var(--accent-red);
+  font-size: 1.1rem;
+  margin-top: 5rem;
+}
+
+.no-poster {
+  width: 320px;
+  height: 480px;
+  background-color: #1b263b;
+  color: var(--text-muted);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+.section-title {
+  width: 100%;
+  text-align: center;
+  margin-top: 3rem;
+  color: var(--text-main);
+  font-size: 1.5rem;
+  letter-spacing: 0.5px;
+}
+
+.cast-grid,
+.similar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.2rem;
+}
+
+.cast-card,
+.similar-card {
+  background-color: var(--card-bg);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+  text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.cast-card:hover,
+.similar-card:hover {
+  transform: translateY(-4px);
+}
+
+.cast-card img,
+.similar-card img {
+  width: 100%;
+  height: 240px;
+  object-fit: cover;
+}
+
+.actor-name,
+.sim-title {
+  font-weight: 600;
+  color: var(--text-main);
+  margin-top: 0.5rem;
+}
+
+.character {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.no-photo,
+.no-poster {
+  height: 240px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #1b263b;
+  color: var(--text-muted);
+}

@@ -1,0 +1,124 @@
+{% extends 'movies/base.html' %}
+{% load static %}
+
+{% block head %}
+<link rel="stylesheet" href="{% static 'movies/css/details.css' %}">
+{% endblock %}
+
+{% block content %}
+{% if error %}
+  <p class="error">{{ error }}</p>
+{% else %}
+<section class="details-container">
+  <div class="poster">
+    {% if poster %}
+      <img src="{{ poster }}"
+           alt="{% if item.title %}{{ item.title }}{% elif item.name %}{{ item.name }}{% else %}Untitled{% endif %}">
+    {% else %}
+      <div class="no-poster">No poster available</div>
+    {% endif %}
+  </div>
+
+  <div class="info">
+    <h2>
+      {% if item.title %}
+        {{ item.title }}
+      {% elif item.name %}
+        {{ item.name }}
+      {% else %}
+        Untitled
+      {% endif %}
+    </h2>
+
+    <p class="year">
+      {% if item.release_date %}
+        {{ item.release_date|slice:":4" }}
+      {% elif item.first_air_date %}
+        {{ item.first_air_date|slice:":4" }}
+      {% else %}
+        Unknown year
+      {% endif %}
+    </p>
+
+    {% if item.runtime %}
+      <p class="runtime">{{ item.runtime }} min</p>
+    {% elif item.episode_run_time and item.episode_run_time.0 %}
+      <p class="runtime">{{ item.episode_run_time.0 }} min</p>
+    {% else %}
+      <p class="runtime">Runtime not available</p>
+    {% endif %}
+
+    {% if item.vote_average %}
+      <p class="rating">⭐ {{ item.vote_average|floatformat:1 }}/10</p>
+    {% endif %}
+
+    {% if item.genres %}
+      <p class="genres">
+        {% for g in item.genres %}
+          {% if g.name %}
+            {{ g.name }}{% if not forloop.last %}, {% endif %}
+          {% else %}
+            Unknown{% if not forloop.last %}, {% endif %}
+          {% endif %}
+        {% empty %}
+          <span>No genres available</span>
+        {% endfor %}
+      </p>
+    {% else %}
+      <p class="genres">No genre data available</p>
+    {% endif %}
+
+    {% if item.overview %}
+      <p class="overview">{{ item.overview }}</p>
+    {% else %}
+      <p class="overview">No overview available.</p>
+    {% endif %}
+  </div>
+</section>
+
+<!-- ✅ TOP CAST SECTION -->
+{% if cast %}
+  <h3 class="section-title">Top Cast</h3>
+  <div class="cast-grid">
+    {% for actor in cast %}
+      <div class="cast-card">
+        {% if actor.profile_path %}
+          <img src="https://image.tmdb.org/t/p/w185{{ actor.profile_path }}" alt="{{ actor.name }}">
+        {% else %}
+          <div class="no-photo">No photo</div>
+        {% endif %}
+        <p class="actor-name">{{ actor.name }}</p>
+        <p class="character">{{ actor.character }}</p>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+{% if similar %}
+  <h3 class="section-title">Similar Titles</h3>
+  <div class="similar-grid">
+    {% for s in similar %}
+      <a href="{% url 'details' s.id media_type %}" class="similar-card">
+        {% if s.poster_path %}
+          <img src="https://image.tmdb.org/t/p/w342{{ s.poster_path }}"
+               alt="{% if s.title %}{{ s.title }}{% elif s.name %}{{ s.name }}{% else %}Untitled{% endif %}">
+        {% else %}
+          <div class="no-poster">No image</div>
+        {% endif %}
+        <p class="sim-title">
+          {% if s.title %}
+            {{ s.title }}
+          {% elif s.name %}
+            {{ s.name }}
+          {% else %}
+            Untitled
+          {% endif %}
+        </p>
+      </a>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<a href="/" class="back-btn">← Back to Search</a>
+{% endif %}
+{% endblock %}
