@@ -66,3 +66,24 @@ footer {
   background-color: rgba(27, 38, 59, 0.6);
   backdrop-filter: blur(10px);
 }
+
+.messages {
+  list-style: none;
+  padding: 0;
+  margin: 1rem auto;
+  text-align: center;
+  color: #ffd60a;
+  font-weight: 500;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

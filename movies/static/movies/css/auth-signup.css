@@ -1,0 +1,142 @@
+/* ---------- SIGNUP PAGE STYLING ---------- */
+
+.auth-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 85vh;
+  text-align: center;
+}
+
+.auth-section h2 {
+  font-size: 1.9rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 2rem;
+}
+
+.auth-section form {
+  background-color: rgba(27, 38, 59, 0.65);
+  padding: 2.8rem 3.8rem 2.8rem 2.2rem;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.55);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.6rem;
+  width: 420px;
+  max-width: 90vw;
+  color: var(--text-main);
+}
+
+.auth-section label {
+  display: block;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-main);
+  margin-bottom: 0.3rem;
+}
+
+.auth-section input {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  outline: none;
+  background: rgba(11, 17, 32, 0.9);
+  color: var(--text-main);
+  font-size: 1rem;
+  transition: all 0.25s ease;
+}
+
+.auth-section input:focus {
+  border: 1px solid #3a86ff;
+  box-shadow: 0 0 6px rgba(58, 134, 255, 0.4);
+  background: #15203a;
+}
+
+.auth-section span,
+.auth-section .helptext {
+  display: none;
+}
+
+.auth-section ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0.05rem 0 0.05rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+}
+
+.auth-section ul li {
+  background: none;
+  color: #9ba4b8;
+  font-size: 0.8rem;
+  text-align: left;
+  padding: 0.15rem 0;
+  line-height: 1.25;
+  border-left: 2px solid transparent;
+  transition: color 0.2s ease;
+}
+
+.auth-section ul li:hover {
+  color: #c3d1e4;
+}
+.auth-section input:invalid + ul li {
+  color: #ff7676;
+}
+
+.auth-section input[name="password2"] {
+  margin-top: 0.2rem;
+}
+
+.auth-section button {
+  background: linear-gradient(to right, #1d3557, #3a86ff);
+  color: #fff;
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 50%;
+  align-self: center;
+  margin-top: 0.4rem;
+}
+
+.auth-section button:hover {
+  background: linear-gradient(to right, #3a86ff, #1d3557);
+  transform: translateY(-2px);
+}
+
+.auth-section p {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin-top: 1.8rem;
+  text-align: center;
+}
+
+.auth-section a {
+  color: #3a86ff;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.auth-section a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+  .auth-section form {
+    padding: 2rem;
+    width: 90%;
+  }
+
+  .auth-section button {
+    width: 70%;
+  }
+}

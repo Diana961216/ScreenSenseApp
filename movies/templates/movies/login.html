@@ -1,0 +1,22 @@
+{% extends 'movies/base.html' %}
+{% load static %}
+
+{% block head %}
+<link rel="stylesheet" href="{% static 'movies/css/auth-login.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="auth-section">
+  <h2>Login</h2>
+
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Login</button>
+  </form>
+
+  <p>Don't have an account?
+    <a href="{% url 'signup' %}">Create one</a>.
+  </p>
+</section>
+{% endblock %}
