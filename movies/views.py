@@ -59,9 +59,14 @@ def details(request, item_id, media_type):
     if response.status_code == 200:
         data = response.json()
 
-        # Extract cast and similar lists
         cast = data.get("credits", {}).get("cast", [])[:5]
         similar = data.get("similar", {}).get("results", [])[:8]
+
+        is_favorited = False
+        if request.user.is_authenticated:
+            is_favorited = Favorite.objects.filter(
+                user=request.user, tmdb_id=item_id, media_type=media_type
+            ).exists()
 
         context = {
             "item": data,
@@ -73,6 +78,7 @@ def details(request, item_id, media_type):
             "media_type": media_type,
             "cast": cast,
             "similar": similar,
+            "is_favorited": is_favorited,
         }
         return render(request, "movies/details.html", context)
     else:
@@ -125,13 +131,16 @@ def add_favorite(request, item_id, media_type):
             f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else None
         )
 
-        Favorite.objects.get_or_create(
+        _, created = Favorite.objects.get_or_create(
             user=request.user,
             tmdb_id=item_id,
             media_type=media_type,
             defaults={"title": title, "poster_url": poster_url},
         )
-        messages.success(request, f'"{title}" added to favorites!')
+        if created:
+            messages.success(request, f'"{title}" added to favorites!')
+        else:
+            messages.info(request, f'"{title}" is already in your favorites.')
     else:
         messages.error(request, "Could not add to favorites.")
 
@@ -149,8 +158,9 @@ def favorites(request):
 def remove_favorite(request, fav_id):
     favorite = Favorite.objects.filter(id=fav_id, user=request.user).first()
     if favorite:
+        title = favorite.title
         favorite.delete()
-        messages.info(request, f'"{favorite.title}" removed from favorites.')
+        messages.info(request, f'"{title}" removed from favorites.')
     else:
         messages.warning(request, "Favorite not found.")
     return redirect("favorites")

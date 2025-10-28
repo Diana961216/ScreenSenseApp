@@ -75,12 +75,19 @@
     {% endif %}
 
     {% if user.is_authenticated %}
-      <form method="post" action="{% url 'add_favorite' item.id media_type %}">
-        {% csrf_token %}
-        <button type="submit" class="back-btn">+ Add to Favorites</button>
-      </form>
+      {% if is_favorited %}
+        <button class="fav-btn added" disabled>★ In Favorites</button>
+      {% else %}
+        <form method="post" action="{% url 'add_favorite' item.id media_type %}">
+          {% csrf_token %}
+          <button type="submit" class="fav-btn">+ Add to Favorites</button>
+        </form>
+      {% endif %}
     {% else %}
-      <p><a href="{% url 'login' %}">Log in</a> to add favorites.</p>
+    <p>
+     <a href="{% url 'login' %}" class="login-link">Log in</a>
+     <span class="login-spacer"> to add favorites.</span>
+    </p>
     {% endif %}
   </div>
 </section>

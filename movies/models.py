@@ -10,5 +10,8 @@ class Favorite(models.Model):
     poster_url = models.URLField(blank=True, null=True)
     added_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        unique_together = ("user", "tmdb_id", "media_type")
+
     def __str__(self):
         return f"{self.title} ({self.media_type}) - {self.user.username}"
