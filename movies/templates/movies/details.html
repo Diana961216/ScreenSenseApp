@@ -73,6 +73,15 @@
     {% else %}
       <p class="overview">No overview available.</p>
     {% endif %}
+
+    {% if user.is_authenticated %}
+      <form method="post" action="{% url 'add_favorite' item.id media_type %}">
+        {% csrf_token %}
+        <button type="submit" class="back-btn">+ Add to Favorites</button>
+      </form>
+    {% else %}
+      <p><a href="{% url 'login' %}">Log in</a> to add favorites.</p>
+    {% endif %}
   </div>
 </section>
 

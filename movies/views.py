@@ -4,12 +4,13 @@ from dotenv import load_dotenv
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from .models import Favorite
 
 load_dotenv()
 
 
 def home(request):
-    """Search TMDB for movies and TV shows"""
     api_key = os.getenv("TMDB_API_KEY")
     query = request.GET.get("q")
 
@@ -50,7 +51,6 @@ def home(request):
 
 
 def details(request, item_id, media_type):
-    """Display detailed info for a specific Movie or TV show"""
     api_key = os.getenv("TMDB_API_KEY")
     url = f"https://api.themoviedb.org/3/{media_type}/{item_id}"
     params = {"api_key": api_key, "append_to_response": "credits,similar"}
@@ -77,9 +77,6 @@ def details(request, item_id, media_type):
         return render(request, "movies/details.html", context)
     else:
         return render(request, "movies/details.html", {"error": "Details not found."})
-
-
-# ---------------- AUTHENTICATION ---------------- #
 
 
 def signup_view(request):
@@ -112,3 +109,48 @@ def logout_view(request):
     logout(request)
     messages.info(request, "You’ve been logged out.")
     return redirect("home")
+
+
+@login_required
+def add_favorite(request, item_id, media_type):
+    api_key = os.getenv("TMDB_API_KEY")
+    url = f"https://api.themoviedb.org/3/{media_type}/{item_id}"
+    response = requests.get(url, params={"api_key": api_key})
+
+    if response.status_code == 200:
+        data = response.json()
+        title = data.get("title") or data.get("name")
+        poster_path = data.get("poster_path")
+        poster_url = (
+            f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else None
+        )
+
+        Favorite.objects.get_or_create(
+            user=request.user,
+            tmdb_id=item_id,
+            media_type=media_type,
+            defaults={"title": title, "poster_url": poster_url},
+        )
+        messages.success(request, f'"{title}" added to favorites!')
+    else:
+        messages.error(request, "Could not add to favorites.")
+
+    return redirect("details", item_id=item_id, media_type=media_type)
+
+
+@login_required
+def favorites(request):
+    user_favorites = Favorite.objects.filter(user=request.user).order_by("-added_at")
+    context = {"favorites": user_favorites}
+    return render(request, "movies/favorites.html", context)
+
+
+@login_required
+def remove_favorite(request, fav_id):
+    favorite = Favorite.objects.filter(id=fav_id, user=request.user).first()
+    if favorite:
+        favorite.delete()
+        messages.info(request, f'"{favorite.title}" removed from favorites.')
+    else:
+        messages.warning(request, "Favorite not found.")
+    return redirect("favorites")

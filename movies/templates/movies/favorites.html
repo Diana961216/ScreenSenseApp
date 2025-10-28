@@ -1,0 +1,39 @@
+{% extends 'movies/base.html' %}
+{% load static %}
+
+{% block head %}
+<link rel="stylesheet" href="{% static 'movies/css/favorites.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="favorites-section">
+  <h2>Your Favorites</h2>
+
+  {% if favorites %}
+    <div class="favorites-grid">
+      {% for fav in favorites %}
+        <div class="favorite-card">
+          <a href="{% url 'details' fav.tmdb_id fav.media_type %}" class="card-link">
+            {% if fav.poster_url %}
+              <img src="{{ fav.poster_url }}" alt="{{ fav.title }}" class="poster-img">
+            {% else %}
+              <div class="no-poster">No Image</div>
+            {% endif %}
+          </a>
+          <div class="info">
+            <h3>{{ fav.title }}</h3>
+            <p class="type">{{ fav.media_type|title }}</p>
+
+            <form method="post" action="{% url 'remove_favorite' fav.id %}">
+              {% csrf_token %}
+              <button type="submit" class="remove-btn">Remove</button>
+            </form>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="no-results">You haven’t added any favorites yet.</p>
+  {% endif %}
+</section>
+{% endblock %}
