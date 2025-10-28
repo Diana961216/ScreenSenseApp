@@ -25,6 +25,50 @@
   {% endif %}
 </section>
 
+{% if not query %}
+  {% if trending %}
+  <section class="results-container">
+    <h3 class="section-subtitle">🔥 Trending Movies</h3>
+    <div class="results-grid scrollable">
+      {% for item in trending %}
+        <a href="{% url 'details' item.id item.media_type %}" class="card">
+          {% if item.poster %}
+            <img src="{{ item.poster }}" alt="{{ item.title }}" class="poster-img">
+          {% else %}
+            <div class="no-poster">No Image</div>
+          {% endif %}
+          <div class="info">
+            <h3>{{ item.title }}</h3>
+            <p class="type">Movie</p>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if popular_tv %}
+  <section class="results-container">
+    <h3 class="section-subtitle">📺 Popular TV Shows</h3>
+    <div class="results-grid scrollable">
+      {% for item in popular_tv %}
+        <a href="{% url 'details' item.id item.media_type %}" class="card">
+          {% if item.poster %}
+            <img src="{{ item.poster }}" alt="{{ item.title }}" class="poster-img">
+          {% else %}
+            <div class="no-poster">No Image</div>
+          {% endif %}
+          <div class="info">
+            <h3>{{ item.title }}</h3>
+            <p class="type">TV Show</p>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+{% endif %}
+
 {% if results %}
 <section class="results-container{% if results|length == 1 %} one{% endif %}">
   <div class="results-grid {% if results|length == 1 %}single{% endif %}">

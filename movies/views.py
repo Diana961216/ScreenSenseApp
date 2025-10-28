@@ -13,8 +13,10 @@ load_dotenv()
 def home(request):
     api_key = os.getenv("TMDB_API_KEY")
     query = request.GET.get("q")
-
     results = []
+    trending = []
+    popular_tv = []
+
     if query:
         url = "https://api.themoviedb.org/3/search/multi"
         params = {"api_key": api_key, "query": query, "include_adult": "false"}
@@ -45,8 +47,51 @@ def home(request):
                         "media_type": media_type,
                     }
                 )
+    else:
+        t_url = "https://api.themoviedb.org/3/trending/movie/week"
+        t_params = {"api_key": api_key}
+        t_res = requests.get(t_url, params=t_params)
+        if t_res.status_code == 200:
+            t_data = t_res.json().get("results", [])[:10]
+            for item in t_data:
+                trending.append(
+                    {
+                        "id": item.get("id"),
+                        "title": item.get("title"),
+                        "poster": (
+                            f"https://image.tmdb.org/t/p/w500{item.get('poster_path')}"
+                            if item.get("poster_path")
+                            else None
+                        ),
+                        "media_type": "movie",
+                    }
+                )
 
-    context = {"results": results, "query": query or ""}
+        p_url = "https://api.themoviedb.org/3/tv/popular"
+        p_params = {"api_key": api_key}
+        p_res = requests.get(p_url, params=p_params)
+        if p_res.status_code == 200:
+            p_data = p_res.json().get("results", [])[:10]
+            for item in p_data:
+                popular_tv.append(
+                    {
+                        "id": item.get("id"),
+                        "title": item.get("name"),
+                        "poster": (
+                            f"https://image.tmdb.org/t/p/w500{item.get('poster_path')}"
+                            if item.get("poster_path")
+                            else None
+                        ),
+                        "media_type": "tv",
+                    }
+                )
+
+    context = {
+        "results": results,
+        "query": query or "",
+        "trending": trending,
+        "popular_tv": popular_tv,
+    }
     return render(request, "movies/home.html", context)
 
 
@@ -130,7 +175,6 @@ def add_favorite(request, item_id, media_type):
         poster_url = (
             f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else None
         )
-
         _, created = Favorite.objects.get_or_create(
             user=request.user,
             tmdb_id=item_id,
