@@ -295,6 +295,16 @@ body {
   box-shadow: none;
 }
 
+.results-container .section-subtitle {
+  margin-top: 3rem;
+  color: #fff;
+}
+
+.results-grid.scrollable .card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(58, 134, 255, 0.45);
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;

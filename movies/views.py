@@ -5,9 +5,71 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from collections import Counter
 from .models import Favorite
 
 load_dotenv()
+
+TMDB_BASE = "https://api.themoviedb.org/3"
+IMAGE_BASE = "https://image.tmdb.org/t/p/w500"
+
+
+def get_personalized_suggestions(user):
+    api_key = os.getenv("TMDB_API_KEY")
+    favorites = Favorite.objects.filter(user=user)
+    if not favorites:
+        return []
+
+    genre_counts = Counter()
+    for fav in favorites:
+        try:
+            url = f"{TMDB_BASE}/{fav.media_type}/{fav.tmdb_id}"
+            res = requests.get(url, params={"api_key": api_key})
+            if res.status_code == 200:
+                data = res.json()
+                for g in data.get("genres", []):
+                    genre_counts[g["id"]] += 1
+        except Exception:
+            continue
+
+    if not genre_counts:
+        return []
+
+    top_genres = [str(gid) for gid, _ in genre_counts.most_common(3)]
+
+    suggestions = []
+    for media_type in ["movie", "tv"]:
+        try:
+            discover_url = f"{TMDB_BASE}/discover/{media_type}"
+            params = {
+                "api_key": api_key,
+                "with_genres": ",".join(top_genres),
+                "sort_by": "popularity.desc",
+                "page": 1,
+            }
+            res = requests.get(discover_url, params=params)
+            if res.status_code == 200:
+                for item in res.json().get("results", [])[:5]:
+                    poster = item.get("poster_path")
+                    suggestions.append(
+                        {
+                            "id": item.get("id"),
+                            "title": item.get("title") or item.get("name"),
+                            "poster": f"{IMAGE_BASE}{poster}" if poster else None,
+                            "media_type": media_type,
+                        }
+                    )
+        except Exception:
+            continue
+
+    seen = set()
+    unique = []
+    for s in suggestions:
+        key = (s["media_type"], s["id"])
+        if key not in seen:
+            seen.add(key)
+            unique.append(s)
+    return unique
 
 
 def home(request):
@@ -17,15 +79,15 @@ def home(request):
     results = []
     trending = []
     popular_tv = []
+    personalized_suggestions = []
 
     next_page = None
     prev_page = None
-
     RESULTS_PER_PAGE = 15
     MAX_TMDB_PAGES_TO_SCAN = 10
 
     def fetch_tmdb_page(q, tmdb_page):
-        url = "https://api.themoviedb.org/3/search/multi"
+        url = f"{TMDB_BASE}/search/multi"
         params = {
             "api_key": api_key,
             "query": q,
@@ -50,9 +112,7 @@ def home(request):
                     "id": item.get("id"),
                     "title": title,
                     "release": release,
-                    "poster": (
-                        f"https://image.tmdb.org/t/p/w500{poster}" if poster else None
-                    ),
+                    "poster": f"{IMAGE_BASE}{poster}" if poster else None,
                     "overview": overview,
                     "media_type": media_type,
                 }
@@ -91,15 +151,11 @@ def home(request):
             if page > 1 and start > 0
             else (page - 1 if page > 1 and collected else None)
         )
-
-        if len(collected) > end:
-            next_page = page + 1
-        else:
-            next_page = None
+        next_page = page + 1 if len(collected) > end else None
 
     else:
-        t_url = "https://api.themoviedb.org/3/trending/movie/week"
-        p_url = "https://api.themoviedb.org/3/tv/popular"
+        t_url = f"{TMDB_BASE}/trending/movie/week"
+        p_url = f"{TMDB_BASE}/tv/popular"
         params = {"api_key": api_key}
 
         t_res = requests.get(t_url, params=params)
@@ -110,7 +166,7 @@ def home(request):
                         "id": item.get("id"),
                         "title": item.get("title"),
                         "poster": (
-                            f"https://image.tmdb.org/t/p/w500{item.get('poster_path')}"
+                            f"{IMAGE_BASE}{item.get('poster_path')}"
                             if item.get("poster_path")
                             else None
                         ),
@@ -126,7 +182,7 @@ def home(request):
                         "id": item.get("id"),
                         "title": item.get("name"),
                         "poster": (
-                            f"https://image.tmdb.org/t/p/w500{item.get('poster_path')}"
+                            f"{IMAGE_BASE}{item.get('poster_path')}"
                             if item.get("poster_path")
                             else None
                         ),
@@ -134,11 +190,18 @@ def home(request):
                     }
                 )
 
+        if (
+            request.user.is_authenticated
+            and Favorite.objects.filter(user=request.user).exists()
+        ):
+            personalized_suggestions = get_personalized_suggestions(request.user)
+
     context = {
         "results": results,
         "query": query or "",
         "trending": trending,
         "popular_tv": popular_tv,
+        "personalized_suggestions": personalized_suggestions,
         "page": page,
         "next_page": next_page,
         "prev_page": prev_page,
@@ -148,7 +211,7 @@ def home(request):
 
 def details(request, item_id, media_type):
     api_key = os.getenv("TMDB_API_KEY")
-    url = f"https://api.themoviedb.org/3/{media_type}/{item_id}"
+    url = f"{TMDB_BASE}/{media_type}/{item_id}"
     params = {"api_key": api_key, "append_to_response": "credits,similar"}
     response = requests.get(url, params=params)
 
@@ -216,16 +279,14 @@ def logout_view(request):
 @login_required
 def add_favorite(request, item_id, media_type):
     api_key = os.getenv("TMDB_API_KEY")
-    url = f"https://api.themoviedb.org/3/{media_type}/{item_id}"
+    url = f"{TMDB_BASE}/{media_type}/{item_id}"
     response = requests.get(url, params={"api_key": api_key})
 
     if response.status_code == 200:
         data = response.json()
         title = data.get("title") or data.get("name")
         poster_path = data.get("poster_path")
-        poster_url = (
-            f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else None
-        )
+        poster_url = f"{IMAGE_BASE}{poster_path}" if poster_path else None
         _, created = Favorite.objects.get_or_create(
             user=request.user,
             tmdb_id=item_id,
