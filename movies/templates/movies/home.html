@@ -73,31 +73,39 @@
 <section class="results-container{% if results|length == 1 %} one{% endif %}">
   <div class="results-grid {% if results|length == 1 %}single{% endif %}">
     {% for item in results %}
-    <a href="{% url 'details' item.id item.media_type %}" class="card">
-      {% if item.poster %}
-        <img src="{{ item.poster }}" alt="{{ item.title }}" class="poster-img">
-      {% else %}
-        <div class="no-poster">No Image</div>
-      {% endif %}
-
-      <div class="info">
-        <h3>{{ item.title }}</h3>
-
-        {% if item.release %}
-          <p class="year">{{ item.release|slice:":4" }}</p>
-        {% endif %}
-
-        <p class="type">{{ item.media_type|title }}</p>
-
-        {% if item.overview %}
-          <p class="overview">{{ item.overview|truncatewords:20 }}</p>
+      <a href="{% url 'details' item.id item.media_type %}" class="card">
+        {% if item.poster %}
+          <img src="{{ item.poster }}" alt="{{ item.title }}" class="poster-img">
         {% else %}
-          <p class="overview">No overview available.</p>
+          <div class="no-poster">No Image</div>
         {% endif %}
-      </div>
-    </a>
+        <div class="info">
+          <h3>{{ item.title }}</h3>
+          {% if item.release %}
+            <p class="year">{{ item.release|slice:":4" }}</p>
+          {% endif %}
+          <p class="type">{{ item.media_type|title }}</p>
+          {% if item.overview %}
+            <p class="overview">{{ item.overview|truncatewords:20 }}</p>
+          {% else %}
+            <p class="overview">No overview available.</p>
+          {% endif %}
+        </div>
+      </a>
     {% endfor %}
   </div>
+
+  {% if query and next_page or query and prev_page %}
+  <div class="pagination-controls">
+    {% if prev_page %}
+      <a href="?q={{ query }}&page={{ prev_page }}" class="page-btn prev">← Previous</a>
+    {% endif %}
+    <span class="page-info">Page {{ page }}</span>
+    {% if next_page %}
+      <a href="?q={{ query }}&page={{ next_page }}" class="page-btn next">Next →</a>
+    {% endif %}
+  </div>
+  {% endif %}
 </section>
 
 {% elif query %}
