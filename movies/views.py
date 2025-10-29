@@ -21,21 +21,64 @@ def get_personalized_suggestions(user):
         return []
 
     genre_counts = Counter()
+    keyword_counts = Counter()
+    person_counts = Counter()
+
     for fav in favorites:
         try:
-            url = f"{TMDB_BASE}/{fav.media_type}/{fav.tmdb_id}"
-            res = requests.get(url, params={"api_key": api_key})
-            if res.status_code == 200:
-                data = res.json()
-                for g in data.get("genres", []):
-                    genre_counts[g["id"]] += 1
+            details_url = f"{TMDB_BASE}/{fav.media_type}/{fav.tmdb_id}"
+            details_res = requests.get(
+                details_url,
+                params={"api_key": api_key, "append_to_response": "credits,keywords"},
+            )
+            if details_res.status_code != 200:
+                continue
+            data = details_res.json()
+
+            for g in data.get("genres", []):
+                genre_counts[g["id"]] += 1
+
+            keywords = data.get("keywords", {}).get("keywords") or data.get(
+                "keywords", []
+            )
+            for k in keywords:
+                keyword_counts[k["id"]] += 1
+
+            credits = data.get("credits", {})
+            for actor in credits.get("cast", [])[:5]:
+                person_counts[actor["id"]] += 1
+            for crew_member in credits.get("crew", []):
+                if crew_member.get("job") in ["Director", "Writer", "Creator"]:
+                    person_counts[crew_member["id"]] += 2
         except Exception:
             continue
 
-    if not genre_counts:
-        return []
+    if not genre_counts and not keyword_counts and not person_counts:
+        try:
+            res = requests.get(
+                f"{TMDB_BASE}/trending/movie/week", params={"api_key": api_key}
+            )
+            data = res.json().get("results", [])[:10]
+            return [
+                {
+                    "id": item.get("id"),
+                    "title": item.get("title") or item.get("name"),
+                    "poster": (
+                        f"{IMAGE_BASE}{item.get('poster_path')}"
+                        if item.get("poster_path")
+                        else None
+                    ),
+                    "media_type": "movie",
+                }
+                for item in data
+                if item.get("poster_path")
+            ]
+        except Exception:
+            return []
 
     top_genres = [str(gid) for gid, _ in genre_counts.most_common(3)]
+    top_keywords = [str(kid) for kid, _ in keyword_counts.most_common(5)]
+    top_people = [str(pid) for pid, _ in person_counts.most_common(3)]
 
     suggestions = []
     for media_type in ["movie", "tv"]:
@@ -44,32 +87,70 @@ def get_personalized_suggestions(user):
             params = {
                 "api_key": api_key,
                 "with_genres": ",".join(top_genres),
+                "with_keywords": ",".join(top_keywords),
+                "with_people": ",".join(top_people),
                 "sort_by": "popularity.desc",
+                "vote_count.gte": 50,
+                "include_adult": "false",
+                "language": "en-US",
                 "page": 1,
             }
             res = requests.get(discover_url, params=params)
             if res.status_code == 200:
-                for item in res.json().get("results", [])[:5]:
+                for item in res.json().get("results", [])[:10]:
                     poster = item.get("poster_path")
+                    if not poster:
+                        continue
                     suggestions.append(
                         {
                             "id": item.get("id"),
                             "title": item.get("title") or item.get("name"),
-                            "poster": f"{IMAGE_BASE}{poster}" if poster else None,
+                            "poster": f"{IMAGE_BASE}{poster}",
                             "media_type": media_type,
                         }
                     )
         except Exception:
             continue
 
+    if not suggestions and top_genres:
+        for media_type in ["movie", "tv"]:
+            try:
+                res = requests.get(
+                    f"{TMDB_BASE}/discover/{media_type}",
+                    params={
+                        "api_key": api_key,
+                        "with_genres": ",".join(top_genres),
+                        "page": 1,
+                    },
+                )
+                if res.status_code == 200:
+                    for item in res.json().get("results", [])[:10]:
+                        poster = item.get("poster_path")
+                        if poster:
+                            suggestions.append(
+                                {
+                                    "id": item.get("id"),
+                                    "title": item.get("title") or item.get("name"),
+                                    "poster": f"{IMAGE_BASE}{poster}",
+                                    "media_type": media_type,
+                                }
+                            )
+            except Exception:
+                continue
+
+    favorite_keys = {(f.media_type, f.tmdb_id) for f in favorites}
     seen = set()
     unique = []
     for s in suggestions:
         key = (s["media_type"], s["id"])
-        if key not in seen:
+        if key not in seen and key not in favorite_keys:
             seen.add(key)
             unique.append(s)
-    return unique
+
+    from random import shuffle
+
+    shuffle(unique)
+    return unique[:10]
 
 
 def home(request):
@@ -145,7 +226,6 @@ def home(request):
             tmdb_page += 1
 
         results = collected[start:end] if start < len(collected) else []
-
         prev_page = (
             page - 1
             if page > 1 and start > 0
@@ -190,6 +270,7 @@ def home(request):
                     }
                 )
 
+        # Personalized suggestions for logged-in users with favorites
         if (
             request.user.is_authenticated
             and Favorite.objects.filter(user=request.user).exists()
@@ -217,16 +298,13 @@ def details(request, item_id, media_type):
 
     if response.status_code == 200:
         data = response.json()
-
         cast = data.get("credits", {}).get("cast", [])[:5]
         similar = data.get("similar", {}).get("results", [])[:8]
-
         is_favorited = False
         if request.user.is_authenticated:
             is_favorited = Favorite.objects.filter(
                 user=request.user, tmdb_id=item_id, media_type=media_type
             ).exists()
-
         context = {
             "item": data,
             "poster": (
@@ -240,8 +318,7 @@ def details(request, item_id, media_type):
             "is_favorited": is_favorited,
         }
         return render(request, "movies/details.html", context)
-    else:
-        return render(request, "movies/details.html", {"error": "Details not found."})
+    return render(request, "movies/details.html", {"error": "Details not found."})
 
 
 def signup_view(request):
@@ -299,7 +376,6 @@ def add_favorite(request, item_id, media_type):
             messages.info(request, f'"{title}" is already in your favorites.')
     else:
         messages.error(request, "Could not add to favorites.")
-
     return redirect("details", item_id=item_id, media_type=media_type)
 
 
@@ -320,3 +396,56 @@ def remove_favorite(request, fav_id):
     else:
         messages.warning(request, "Favorite not found.")
     return redirect("favorites")
+
+
+@login_required
+def suggestions(request):
+    api_key = os.getenv("TMDB_API_KEY")
+
+    base = get_personalized_suggestions(request.user)
+
+    more = []
+    user_favs = Favorite.objects.filter(user=request.user).order_by("-added_at")[:6]
+
+    for fav in user_favs:
+        try:
+            rec_url = f"{TMDB_BASE}/{fav.media_type}/{fav.tmdb_id}/recommendations"
+            res = requests.get(rec_url, params={"api_key": api_key, "page": 1})
+            if res.status_code != 200:
+                continue
+            for item in res.json().get("results", [])[:10]:
+                poster = item.get("poster_path")
+                if not poster:
+                    continue
+                more.append(
+                    {
+                        "id": item.get("id"),
+                        "title": item.get("title") or item.get("name"),
+                        "poster": f"{IMAGE_BASE}{poster}",
+                        "media_type": (
+                            fav.media_type
+                            if item.get("media_type") is None
+                            else item.get("media_type")
+                        ),
+                    }
+                )
+        except Exception:
+            continue
+
+    favorite_keys = {
+        (f.media_type, f.tmdb_id) for f in Favorite.objects.filter(user=request.user)
+    }
+    seen = {(x["media_type"], x["id"]) for x in base}
+    combined = base[:]
+    for s in more:
+        key = (s["media_type"], s["id"])
+        if key not in seen and key not in favorite_keys:
+            seen.add(key)
+            combined.append(s)
+
+    combined = combined[:40]
+
+    context = {
+        "suggestions": combined,
+    }
+    return render(request, "movies/suggestions.html", context)

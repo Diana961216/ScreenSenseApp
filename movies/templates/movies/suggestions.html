@@ -1,0 +1,40 @@
+{% extends 'movies/base.html' %}
+{% load static %}
+
+{% block head %}
+<link rel="stylesheet" href="{% static 'movies/css/suggestions.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="suggestions-header">
+  <h2>For You</h2>
+  <p>Your personalized mix of movies and shows, curated just for you.</p>
+</section>
+
+{% if suggestions %}
+<section>
+  <div class="suggestions-grid">
+    {% for item in suggestions %}
+      <a href="{% url 'details' item.id item.media_type %}" class="suggestion-card">
+        {% if item.poster %}
+          <img src="{{ item.poster }}" alt="{{ item.title }}" class="suggestion-poster">
+        {% else %}
+          <div class="suggestion-no-poster">No Image</div>
+        {% endif %}
+        <div class="suggestion-info">
+          <h3>{{ item.title }}</h3>
+          <p class="suggestion-type">{{ item.media_type|title }}</p>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+{% else %}
+<section class="no-results-section">
+  <p class="no-results">
+    You don’t have any personalized recommendations yet.<br>
+    Add a few favorites to unlock your “For You” page!
+  </p>
+</section>
+{% endif %}
+{% endblock %}

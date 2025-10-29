@@ -11,9 +11,12 @@ urlpatterns = [
         name="add_favorite",
     ),
     path(
-        "remove-favorite/<int:fav_id>/", views.remove_favorite, name="remove_favorite"
+        "remove-favorite/<int:fav_id>/",
+        views.remove_favorite,
+        name="remove_favorite",
     ),
     path("signup/", views.signup_view, name="signup"),
     path("login/", views.login_view, name="login"),
     path("logout/", views.logout_view, name="logout"),
+    path("suggestions/", views.suggestions, name="suggestions"),
 ]
