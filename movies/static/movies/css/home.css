@@ -48,6 +48,21 @@ body {
   color: #9ba4b4;
 }
 
+.search-type {
+  background: #1b263b;
+  color: var(--text-main);
+  border: none;
+  border-radius: 8px;
+  padding: 0.65rem 0.8rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.search-type:hover {
+  background: #24344e;
+}
+
 .search-section button {
   background: var(--accent-color, #1d3557);
   color: #fff;
@@ -209,6 +224,7 @@ body {
   margin-right: auto;
 }
 
+/* scrollable rows (Trending / For You) */
 .scrollable {
   display: flex;
   overflow-x: auto;
@@ -295,16 +311,7 @@ body {
   box-shadow: none;
 }
 
-.results-container .section-subtitle {
-  margin-top: 3rem;
-  color: #fff;
-}
-
-.results-grid.scrollable .card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(58, 134, 255, 0.45);
-}
-
+/* -------- ANIMATIONS -------- */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -324,6 +331,11 @@ body {
 
 @media (max-width: 768px) {
   .search-section form {
+    flex-direction: column;
+    width: 90%;
+    gap: 0.6rem;
+  }
+  .search-type {
     width: 90%;
   }
 

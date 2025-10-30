@@ -17,6 +17,11 @@
       value="{{ query|default:'' }}" 
       required
     >
+    <select name="type" class="search-type">
+      <option value="title" {% if search_type == "title" or not search_type %}selected{% endif %}>Title</option>
+      <option value="actor" {% if search_type == "actor" %}selected{% endif %}>Actor</option>
+      <option value="genre" {% if search_type == "genre" %}selected{% endif %}>Genre</option>
+    </select>
     <button type="submit">Search</button>
   </form>
 
@@ -119,11 +124,11 @@
   {% if query and next_page or query and prev_page %}
   <div class="pagination-controls">
     {% if prev_page %}
-      <a href="?q={{ query }}&page={{ prev_page }}" class="page-btn prev">← Previous</a>
+      <a href="?q={{ query }}&page={{ prev_page }}&type={{ search_type }}" class="page-btn prev">← Previous</a>
     {% endif %}
     <span class="page-info">Page {{ page }}</span>
     {% if next_page %}
-      <a href="?q={{ query }}&page={{ next_page }}" class="page-btn next">Next →</a>
+      <a href="?q={{ query }}&page={{ next_page }}&type={{ search_type }}" class="page-btn next">Next →</a>
     {% endif %}
   </div>
   {% endif %}

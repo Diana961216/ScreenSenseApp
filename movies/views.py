@@ -157,6 +157,7 @@ def get_personalized_suggestions(user):
 def home(request):
     api_key = os.getenv("TMDB_API_KEY")
     query = request.GET.get("q")
+    search_type = request.GET.get("type", "title")
     page = int(request.GET.get("page", 1))
     results = []
     trending = []
@@ -167,6 +168,78 @@ def home(request):
     prev_page = None
     RESULTS_PER_PAGE = 15
     MAX_TMDB_PAGES_TO_SCAN = 10
+
+    if query and search_type == "actor":
+        r = requests.get(
+            f"{TMDB_BASE}/search/person",
+            params={
+                "api_key": api_key,
+                "query": query,
+                "page": 1,
+                "include_adult": "false",
+            },
+        )
+        if r.status_code == 200:
+            data = r.json().get("results", [])
+            if data:
+                first = data[0]
+                if first.get("id") and first.get("name"):
+                    return redirect(
+                        "actor_search", person_id=first["id"], name=first["name"]
+                    )
+        messages.warning(request, "No actor found with that name.")
+
+    if query and search_type == "genre":
+        gid = None
+        try:
+            g_res = requests.get(
+                f"{TMDB_BASE}/genre/movie/list",
+                params={"api_key": api_key, "language": "en-US"},
+            )
+            if g_res.status_code == 200:
+                for g in g_res.json().get("genres", []):
+                    if g["name"].lower() == query.lower():
+                        gid = g["id"]
+                        break
+        except Exception:
+            pass
+
+        if gid:
+            d = requests.get(
+                f"{TMDB_BASE}/discover/movie",
+                params={"api_key": api_key, "with_genres": gid, "page": 1},
+            )
+            if d.status_code == 200:
+                for i in d.json().get("results", [])[:20]:
+                    poster = i.get("poster_path")
+                    results.append(
+                        {
+                            "id": i.get("id"),
+                            "title": i.get("title") or i.get("name"),
+                            "poster": f"{IMAGE_BASE}{poster}" if poster else None,
+                            "media_type": "movie",
+                            "overview": i.get("overview"),
+                            "release": i.get("release_date"),
+                        }
+                    )
+        else:
+            messages.warning(request, f'Genre "{query}" not found.')
+
+        return render(
+            request,
+            "movies/home.html",
+            {
+                "results": results,
+                "query": query or "",
+                "search_type": search_type,
+                "trending": [],
+                "popular_tv": [],
+                "personalized_suggestions": [],
+                "page": page,
+                "next_page": None,
+                "prev_page": None,
+            },
+        )
 
     def fetch_tmdb_page(q, tmdb_page):
         url = f"{TMDB_BASE}/search/multi"
@@ -201,7 +274,7 @@ def home(request):
             )
         return filtered, data.get("total_pages", 1)
 
-    if query:
+    if query and search_type == "title":
         start = (page - 1) * RESULTS_PER_PAGE
         end = start + RESULTS_PER_PAGE
 
@@ -234,7 +307,7 @@ def home(request):
         )
         next_page = page + 1 if len(collected) > end else None
 
-    else:
+    elif not query:
         t_url = f"{TMDB_BASE}/trending/movie/week"
         p_url = f"{TMDB_BASE}/tv/popular"
         params = {"api_key": api_key}
@@ -280,6 +353,7 @@ def home(request):
     context = {
         "results": results,
         "query": query or "",
+        "search_type": search_type,
         "trending": trending,
         "popular_tv": popular_tv,
         "personalized_suggestions": personalized_suggestions,
@@ -431,24 +505,25 @@ def suggestions(request):
         try:
             rec_url = f"{TMDB_BASE}/{fav.media_type}/{fav.tmdb_id}/recommendations"
             res = requests.get(rec_url, params={"api_key": api_key, "page": 1})
-            if res.status_code != 200:
-                continue
-            for item in res.json().get("results", [])[:10]:
-                poster = item.get("poster_path")
-                if not poster:
-                    continue
-                more.append(
-                    {
-                        "id": item.get("id"),
-                        "title": item.get("title") or item.get("name"),
-                        "poster": f"{IMAGE_BASE}{poster}",
-                        "media_type": (
-                            fav.media_type
-                            if item.get("media_type") is None
-                            else item.get("media_type")
-                        ),
-                    }
-                )
+            if res.status_code != 0:
+                pass
+            if res.status_code == 200:
+                for item in res.json().get("results", [])[:10]:
+                    poster = item.get("poster_path")
+                    if not poster:
+                        continue
+                    more.append(
+                        {
+                            "id": item.get("id"),
+                            "title": item.get("title") or item.get("name"),
+                            "poster": f"{IMAGE_BASE}{poster}",
+                            "media_type": (
+                                fav.media_type
+                                if item.get("media_type") is None
+                                else item.get("media_type")
+                            ),
+                        }
+                    )
         except Exception:
             continue
 
