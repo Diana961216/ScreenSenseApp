@@ -5,6 +5,7 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from collections import Counter
 from .models import Favorite
 
@@ -270,7 +271,6 @@ def home(request):
                     }
                 )
 
-        # Personalized suggestions for logged-in users with favorites
         if (
             request.user.is_authenticated
             and Favorite.objects.filter(user=request.user).exists()
@@ -445,7 +445,18 @@ def suggestions(request):
 
     combined = combined[:40]
 
+    page = request.GET.get("page", 1)
+    per_page = 12
+    paginator = Paginator(combined, per_page)
+    try:
+        page_obj = paginator.page(page)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
     context = {
-        "suggestions": combined,
+        "suggestions": list(page_obj.object_list),
+        "page_obj": page_obj,
     }
     return render(request, "movies/suggestions.html", context)

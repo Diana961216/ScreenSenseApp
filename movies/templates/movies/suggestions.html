@@ -28,6 +28,18 @@
       </a>
     {% endfor %}
   </div>
+
+  {% if page_obj %}
+  <div class="pagination-controls">
+    {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}" class="page-btn prev">← Previous</a>
+    {% endif %}
+    <span class="page-info">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}" class="page-btn next">Next →</a>
+    {% endif %}
+  </div>
+  {% endif %}
 </section>
 {% else %}
 <section class="no-results-section">
