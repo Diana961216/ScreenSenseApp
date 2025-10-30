@@ -68,6 +68,17 @@
       <p class="genres">No genre data available</p>
     {% endif %}
 
+    {% if watch_providers and watch_providers|length > 0 %}
+      <p class="providers">
+        <span class="providers-label">Available on:</span>
+        {% for p in watch_providers %}
+          <span class="provider-chip">{{ p }}</span>
+        {% endfor %}
+      </p>
+    {% else %}
+      <p class="providers providers-empty">Streaming availability not listed.</p>
+    {% endif %}
+
     {% if item.overview %}
       <p class="overview">{{ item.overview }}</p>
     {% else %}

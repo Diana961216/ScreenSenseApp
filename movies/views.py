@@ -300,6 +300,25 @@ def details(request, item_id, media_type):
         data = response.json()
         cast = data.get("credits", {}).get("cast", [])[:5]
         similar = data.get("similar", {}).get("results", [])[:8]
+
+        watch_providers = []
+        try:
+            prov_res = requests.get(
+                f"{TMDB_BASE}/{media_type}/{item_id}/watch/providers",
+                params={"api_key": api_key},
+            )
+            if prov_res.status_code == 200:
+                us = prov_res.json().get("results", {}).get("US", {})
+                names = []
+                for key in ("flatrate", "ads", "free"):
+                    for entry in us.get(key, []) or []:
+                        nm = entry.get("provider_name")
+                        if nm and nm not in names:
+                            names.append(nm)
+                watch_providers = names[:10]
+        except Exception:
+            watch_providers = []
+
         is_favorited = False
         if request.user.is_authenticated:
             is_favorited = Favorite.objects.filter(
@@ -316,6 +335,7 @@ def details(request, item_id, media_type):
             "cast": cast,
             "similar": similar,
             "is_favorited": is_favorited,
+            "watch_providers": watch_providers,
         }
         return render(request, "movies/details.html", context)
     return render(request, "movies/details.html", {"error": "Details not found."})
