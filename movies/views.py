@@ -480,3 +480,57 @@ def suggestions(request):
         "page_obj": page_obj,
     }
     return render(request, "movies/suggestions.html", context)
+
+
+def actor_search(request, person_id, name):
+    api_key = os.getenv("TMDB_API_KEY")
+    credits = []
+    try:
+        res = requests.get(
+            f"{TMDB_BASE}/person/{person_id}/combined_credits",
+            params={"api_key": api_key},
+        )
+        if res.status_code == 200:
+            data = res.json()
+            for item in data.get("cast", []):
+                media_type = item.get("media_type")
+                if media_type not in ["movie", "tv"]:
+                    continue
+                poster = item.get("poster_path")
+                title = item.get("title") or item.get("name")
+                credits.append(
+                    {
+                        "id": item.get("id"),
+                        "title": title,
+                        "poster": f"{IMAGE_BASE}{poster}" if poster else None,
+                        "media_type": media_type,
+                        "release": item.get("release_date")
+                        or item.get("first_air_date"),
+                        "overview": item.get("overview"),
+                    }
+                )
+    except Exception:
+        pass
+
+    def sort_key(x):
+        date = x.get("release") or ""
+        return (date is None, date)
+
+    credits_sorted = sorted(credits, key=sort_key, reverse=True)
+
+    page = request.GET.get("page", 1)
+    per_page = 15
+    paginator = Paginator(credits_sorted, per_page)
+    try:
+        page_obj = paginator.page(page)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
+    context = {
+        "results": list(page_obj.object_list),
+        "actor_name": name,
+        "page_obj": page_obj,
+    }
+    return render(request, "movies/actor_search.html", context)

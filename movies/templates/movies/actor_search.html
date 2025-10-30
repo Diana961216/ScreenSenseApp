@@ -1,0 +1,52 @@
+{% extends 'movies/base.html' %}
+{% load static %}
+
+{% block head %}
+<link rel="stylesheet" href="{% static 'movies/css/actor-search.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="search-section">
+  <h2>Titles featuring {{ actor_name }}</h2>
+</section>
+
+{% if results %}
+<section class="results-container">
+  <div class="results-grid">
+    {% for item in results %}
+      <a href="{% url 'details' item.id item.media_type %}" class="card">
+        {% if item.poster %}
+          <img src="{{ item.poster }}" alt="{{ item.title }}" class="poster-img">
+        {% else %}
+          <div class="no-poster">No Image</div>
+        {% endif %}
+        <div class="info">
+          <h3>{{ item.title }}</h3>
+          {% if item.release %}
+            <p class="year">{{ item.release|slice:":4" }}</p>
+          {% endif %}
+          <p class="type">{{ item.media_type|title }}</p>
+          {% if item.overview %}
+            <p class="overview">{{ item.overview|truncatewords:20 }}</p>
+          {% endif %}
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+
+  {% if page_obj %}
+  <div class="pagination-controls">
+    {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}" class="page-btn prev">← Previous</a>
+    {% endif %}
+    <span class="page-info">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}" class="page-btn next">Next →</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</section>
+{% else %}
+<p class="no-results">No titles found for {{ actor_name }}.</p>
+{% endif %}
+{% endblock %}
