@@ -39,7 +39,6 @@ def best_name_match(search_name, candidates):
         )
 
         total_score = (first_ratio * 0.4) + (last_ratio * 0.6)
-
         if total_score > best_score:
             best_score = total_score
             best = cand
@@ -202,6 +201,7 @@ def home(request):
     api_key = os.getenv("TMDB_API_KEY")
     query = request.GET.get("q")
     search_type = request.GET.get("type", "title")
+    media_filter = request.GET.get("media", "all")
     page = int(request.GET.get("page", 1))
     results = []
     trending = []
@@ -278,9 +278,9 @@ def home(request):
                 params={"api_key": api_key, "query": search_name, "page": 1},
             )
             if search_fallback.status_code == 200:
-                results = search_fallback.json().get("results", [])
-                if results:
-                    top = results[0]
+                results_people = search_fallback.json().get("results", [])
+                if results_people:
+                    top = results_people[0]
                     return redirect(
                         "actor_search", person_id=top["id"], name=top["name"]
                     )
@@ -348,6 +348,7 @@ def home(request):
                 "results": results,
                 "query": query or "",
                 "search_type": search_type,
+                "media": media_filter,
                 "trending": [],
                 "popular_tv": [],
                 "personalized_suggestions": [],
@@ -415,6 +416,9 @@ def home(request):
                     break
             tmdb_page += 1
 
+        if media_filter in ("movie", "tv"):
+            collected = [it for it in collected if it["media_type"] == media_filter]
+
         results = collected[start:end] if start < len(collected) else []
         prev_page = (
             page - 1
@@ -424,41 +428,41 @@ def home(request):
         next_page = page + 1 if len(collected) > end else None
 
     elif not query:
-        t_url = f"{TMDB_BASE}/trending/movie/week"
-        p_url = f"{TMDB_BASE}/tv/popular"
         params = {"api_key": api_key}
 
-        t_res = requests.get(t_url, params=params)
-        if t_res.status_code == 200:
-            for item in t_res.json().get("results", [])[:10]:
-                trending.append(
-                    {
-                        "id": item.get("id"),
-                        "title": item.get("title"),
-                        "poster": (
-                            f"{IMAGE_BASE}{item.get('poster_path')}"
-                            if item.get("poster_path")
-                            else None
-                        ),
-                        "media_type": "movie",
-                    }
-                )
+        if media_filter in ("all", "movie"):
+            t_res = requests.get(f"{TMDB_BASE}/trending/movie/week", params=params)
+            if t_res.status_code == 200:
+                for item in t_res.json().get("results", [])[:10]:
+                    trending.append(
+                        {
+                            "id": item.get("id"),
+                            "title": item.get("title"),
+                            "poster": (
+                                f"{IMAGE_BASE}{item.get('poster_path')}"
+                                if item.get("poster_path")
+                                else None
+                            ),
+                            "media_type": "movie",
+                        }
+                    )
 
-        p_res = requests.get(p_url, params=params)
-        if p_res.status_code == 200:
-            for item in p_res.json().get("results", [])[:10]:
-                popular_tv.append(
-                    {
-                        "id": item.get("id"),
-                        "title": item.get("name"),
-                        "poster": (
-                            f"{IMAGE_BASE}{item.get('poster_path')}"
-                            if item.get("poster_path")
-                            else None
-                        ),
-                        "media_type": "tv",
-                    }
-                )
+        if media_filter in ("all", "tv"):
+            p_res = requests.get(f"{TMDB_BASE}/tv/popular", params=params)
+            if p_res.status_code == 200:
+                for item in p_res.json().get("results", [])[:10]:
+                    popular_tv.append(
+                        {
+                            "id": item.get("id"),
+                            "title": item.get("name"),
+                            "poster": (
+                                f"{IMAGE_BASE}{item.get('poster_path')}"
+                                if item.get("poster_path")
+                                else None
+                            ),
+                            "media_type": "tv",
+                        }
+                    )
 
         if (
             request.user.is_authenticated
@@ -470,6 +474,7 @@ def home(request):
         "results": results,
         "query": query or "",
         "search_type": search_type,
+        "media": media_filter,
         "trending": trending,
         "popular_tv": popular_tv,
         "personalized_suggestions": personalized_suggestions,
@@ -533,7 +538,6 @@ def details(request, item_id, media_type):
             "is_watchlisted": is_watchlisted,
             "watch_providers": watch_providers,
         }
-
         return render(request, "movies/details.html", context)
 
     return render(request, "movies/details.html", {"error": "Details not found."})
@@ -576,7 +580,6 @@ def add_favorite(request, item_id, media_type):
     api_key = os.getenv("TMDB_API_KEY")
     url = f"{TMDB_BASE}/{media_type}/{item_id}"
     response = requests.get(url, params={"api_key": api_key})
-
     if response.status_code == 200:
         data = response.json()
         title = data.get("title") or data.get("name")
@@ -619,12 +622,10 @@ def remove_favorite(request, fav_id):
 @login_required
 def suggestions(request):
     api_key = os.getenv("TMDB_API_KEY")
-
     base = get_personalized_suggestions(request.user)
 
     more = []
     user_favs = Favorite.objects.filter(user=request.user).order_by("-added_at")[:6]
-
     for fav in user_favs:
         try:
             rec_url = f"{TMDB_BASE}/{fav.media_type}/{fav.tmdb_id}/recommendations"
@@ -672,10 +673,7 @@ def suggestions(request):
     except EmptyPage:
         page_obj = paginator.page(paginator.num_pages)
 
-    context = {
-        "suggestions": list(page_obj.object_list),
-        "page_obj": page_obj,
-    }
+    context = {"suggestions": list(page_obj.object_list), "page_obj": page_obj}
     return render(request, "movies/suggestions.html", context)
 
 

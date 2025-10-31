@@ -224,7 +224,6 @@ body {
   margin-right: auto;
 }
 
-/* scrollable rows (Trending / For You) */
 .scrollable {
   display: flex;
   overflow-x: auto;
@@ -311,7 +310,6 @@ body {
   box-shadow: none;
 }
 
-/* -------- ANIMATIONS -------- */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -343,16 +341,13 @@ body {
     width: 190px;
     height: 370px;
   }
-
   .poster-img,
   .no-poster {
     height: 300px;
   }
-
   .info h3 {
     font-size: 0.95rem;
   }
-
   .overview {
     font-size: 0.75rem;
   }
@@ -369,24 +364,41 @@ body {
     gap: 1.2rem;
     padding: 0 1rem;
   }
-
   .card {
     width: 160px;
     height: 320px;
   }
-
   .poster-img,
   .no-poster {
     height: 260px;
   }
-
   .overview {
     font-size: 0.7rem;
   }
-
   .pagination-controls {
     width: 100%;
     margin-top: 1.5rem;
     padding: 0.5rem 0.8rem;
   }
+}
+
+.badge {
+  display: inline-block;
+  margin-top: 0.15rem;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 999px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  background: rgba(27, 38, 59, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #dbe4ff;
+}
+.badge-movie {
+  color: #ffd166;
+  border-color: rgba(255, 209, 102, 0.35);
+}
+.badge-tv {
+  color: #6ee7ff;
+  border-color: rgba(110, 231, 255, 0.35);
 }

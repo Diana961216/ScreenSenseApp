@@ -30,6 +30,10 @@
       {% endif %}
     </h2>
 
+    <p class="providers" style="margin-top:0.2rem;margin-bottom:0.6rem;">
+      <span class="provider-chip">{{ media_type|title }}</span>
+    </p>
+
     <p class="year">
       {% if item.release_date %}
         {{ item.release_date|slice:":4" }}
@@ -85,30 +89,30 @@
       <p class="overview">No overview available.</p>
     {% endif %}
 
-{% if user.is_authenticated %}
-  {% if is_favorited %}
-    <button class="fav-btn added" disabled>★ In Favorites</button>
-  {% else %}
-    <form method="post" action="{% url 'add_favorite' item.id media_type %}">
-      {% csrf_token %}
-      <button type="submit" class="fav-btn">+ Add to Favorites</button>
-    </form>
-  {% endif %}
+    {% if user.is_authenticated %}
+      {% if is_favorited %}
+        <button class="fav-btn added" disabled>★ In Favorites</button>
+      {% else %}
+        <form method="post" action="{% url 'add_favorite' item.id media_type %}">
+          {% csrf_token %}
+          <button type="submit" class="fav-btn">+ Add to Favorites</button>
+        </form>
+      {% endif %}
 
-  {% if is_watchlisted %}
-    <button class="fav-btn added" style="margin-left:0.6rem" disabled>✓ In Watchlist</button>
-  {% else %}
-    <form method="post" action="{% url 'add_watchlist' item.id media_type %}" style="display:inline-block;margin-left:0.6rem">
-      {% csrf_token %}
-      <button type="submit" class="fav-btn">+ Add to Watchlist</button>
-    </form>
-  {% endif %}
-{% else %}
-  <p>
-    <a href="{% url 'login' %}" class="login-link">Log in</a>
-    <span class="login-spacer"> to add favorites or watchlist.</span>
-  </p>
-{% endif %}
+      {% if is_watchlisted %}
+        <button class="fav-btn added" style="margin-left:0.6rem" disabled>✓ In Watchlist</button>
+      {% else %}
+        <form method="post" action="{% url 'add_watchlist' item.id media_type %}" style="display:inline-block;margin-left:0.6rem">
+          {% csrf_token %}
+          <button type="submit" class="fav-btn">+ Add to Watchlist</button>
+        </form>
+      {% endif %}
+    {% else %}
+      <p>
+        <a href="{% url 'login' %}" class="login-link">Log in</a>
+        <span class="login-spacer"> to add favorites or watchlist.</span>
+      </p>
+    {% endif %}
   </div>
 </section>
 
@@ -143,13 +147,9 @@
           <div class="no-poster">No image</div>
         {% endif %}
         <p class="sim-title">
-          {% if s.title %}
-            {{ s.title }}
-          {% elif s.name %}
-            {{ s.name }}
-          {% else %}
-            Untitled
-          {% endif %}
+          {% if s.title %}{{ s.title }}
+          {% elif s.name %}{{ s.name }}
+          {% else %}Untitled{% endif %}
         </p>
       </a>
     {% endfor %}
