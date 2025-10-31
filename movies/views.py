@@ -8,11 +8,55 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from collections import Counter
 from .models import Favorite
+from difflib import get_close_matches, SequenceMatcher
 
 load_dotenv()
 
 TMDB_BASE = "https://api.themoviedb.org/3"
 IMAGE_BASE = "https://image.tmdb.org/t/p/w500"
+
+
+def best_name_match(search_name, candidates):
+    search = search_name.lower().strip()
+    search_parts = search.split()
+    first_search = search_parts[0] if len(search_parts) > 0 else ""
+    last_search = search_parts[-1] if len(search_parts) > 1 else ""
+
+    best = None
+    best_score = 0
+
+    for cand in candidates:
+        cand_lower = cand.lower()
+        cand_parts = cand_lower.split()
+        first_cand = cand_parts[0] if len(cand_parts) > 0 else ""
+        last_cand = cand_parts[-1] if len(cand_parts) > 1 else ""
+
+        first_ratio = SequenceMatcher(None, first_search, first_cand).ratio()
+        last_ratio = (
+            SequenceMatcher(None, last_search, last_cand).ratio()
+            if last_search
+            else 0.5
+        )
+
+        total_score = (first_ratio * 0.4) + (last_ratio * 0.6)
+
+        if total_score > best_score:
+            best_score = total_score
+            best = cand
+
+    if best_score >= 0.68:
+        return best
+
+    if last_search:
+        for cand in candidates:
+            if last_search in cand.lower():
+                return cand
+
+    for cand in candidates:
+        if search in cand.lower():
+            return cand
+
+    return None
 
 
 def get_personalized_suggestions(user):
@@ -170,24 +214,96 @@ def home(request):
     MAX_TMDB_PAGES_TO_SCAN = 10
 
     if query and search_type == "actor":
+        search_name = query.strip()
         r = requests.get(
             f"{TMDB_BASE}/search/person",
             params={
                 "api_key": api_key,
-                "query": query,
+                "query": search_name,
                 "page": 1,
                 "include_adult": "false",
             },
         )
+
+        data = []
         if r.status_code == 200:
             data = r.json().get("results", [])
-            if data:
-                first = data[0]
-                if first.get("id") and first.get("name"):
+
+        if not data:
+            simplified = "".join(
+                ch for ch in search_name if ch.isalpha() or ch.isspace()
+            )
+            simplified = simplified.replace("nn", "n").replace("ff", "f").strip()
+            second_try = requests.get(
+                f"{TMDB_BASE}/search/person",
+                params={
+                    "api_key": api_key,
+                    "query": simplified,
+                    "page": 1,
+                    "include_adult": "false",
+                },
+            )
+            if second_try.status_code == 200:
+                second_data = second_try.json().get("results", [])
+                if second_data:
+                    best = second_data[0]
                     return redirect(
-                        "actor_search", person_id=first["id"], name=first["name"]
+                        "actor_search", person_id=best["id"], name=best["name"]
                     )
-        messages.warning(request, "No actor found with that name.")
+
+            fallback_names = []
+            for page_num in range(1, 6):
+                try:
+                    pop = requests.get(
+                        f"{TMDB_BASE}/person/popular",
+                        params={"api_key": api_key, "page": page_num},
+                    )
+                    if pop.status_code == 200:
+                        fallback_names.extend(pop.json().get("results", []))
+                except Exception:
+                    continue
+
+            if fallback_names:
+                names = [p.get("name", "") for p in fallback_names if p.get("name")]
+                best = best_name_match(search_name, names)
+                if best:
+                    for p in fallback_names:
+                        if p.get("name") == best:
+                            return redirect(
+                                "actor_search", person_id=p["id"], name=p["name"]
+                            )
+
+            search_fallback = requests.get(
+                f"{TMDB_BASE}/search/person",
+                params={"api_key": api_key, "query": search_name, "page": 1},
+            )
+            if search_fallback.status_code == 200:
+                results = search_fallback.json().get("results", [])
+                if results:
+                    top = results[0]
+                    return redirect(
+                        "actor_search", person_id=top["id"], name=top["name"]
+                    )
+
+        if data:
+            names = [p.get("name", "") for p in data if p.get("name")]
+            best = best_name_match(search_name, names)
+            if best:
+                for p in data:
+                    if p.get("name") == best:
+                        return redirect(
+                            "actor_search", person_id=p["id"], name=p["name"]
+                        )
+            first = data[0]
+            if first.get("id") and first.get("name"):
+                return redirect(
+                    "actor_search", person_id=first["id"], name=first["name"]
+                )
+
+        messages.warning(
+            request,
+            f'No actor found for "{query}". Try checking spelling or shortening the name.',
+        )
 
     if query and search_type == "genre":
         gid = None
@@ -505,8 +621,6 @@ def suggestions(request):
         try:
             rec_url = f"{TMDB_BASE}/{fav.media_type}/{fav.tmdb_id}/recommendations"
             res = requests.get(rec_url, params={"api_key": api_key, "page": 1})
-            if res.status_code != 0:
-                pass
             if res.status_code == 200:
                 for item in res.json().get("results", [])[:10]:
                     poster = item.get("poster_path")
