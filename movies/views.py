@@ -7,7 +7,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from collections import Counter
-from .models import Favorite
+from .models import Favorite, Watchlist
 from difflib import get_close_matches, SequenceMatcher
 
 load_dotenv()
@@ -510,10 +510,15 @@ def details(request, item_id, media_type):
             watch_providers = []
 
         is_favorited = False
+        is_watchlisted = False
         if request.user.is_authenticated:
             is_favorited = Favorite.objects.filter(
                 user=request.user, tmdb_id=item_id, media_type=media_type
             ).exists()
+            is_watchlisted = Watchlist.objects.filter(
+                user=request.user, tmdb_id=item_id, media_type=media_type
+            ).exists()
+
         context = {
             "item": data,
             "poster": (
@@ -525,9 +530,12 @@ def details(request, item_id, media_type):
             "cast": cast,
             "similar": similar,
             "is_favorited": is_favorited,
+            "is_watchlisted": is_watchlisted,
             "watch_providers": watch_providers,
         }
+
         return render(request, "movies/details.html", context)
+
     return render(request, "movies/details.html", {"error": "Details not found."})
 
 
@@ -723,3 +731,46 @@ def actor_search(request, person_id, name):
         "page_obj": page_obj,
     }
     return render(request, "movies/actor_search.html", context)
+
+
+@login_required
+def add_watchlist(request, item_id, media_type):
+    api_key = os.getenv("TMDB_API_KEY")
+    url = f"{TMDB_BASE}/{media_type}/{item_id}"
+    res = requests.get(url, params={"api_key": api_key})
+    if res.status_code == 200:
+        data = res.json()
+        title = data.get("title") or data.get("name")
+        poster_path = data.get("poster_path")
+        poster_url = f"{IMAGE_BASE}{poster_path}" if poster_path else None
+        _, created = Watchlist.objects.get_or_create(
+            user=request.user,
+            tmdb_id=item_id,
+            media_type=media_type,
+            defaults={"title": title, "poster_url": poster_url},
+        )
+        if created:
+            messages.success(request, f'"{title}" added to your watchlist.')
+        else:
+            messages.info(request, f'"{title}" is already in your watchlist.')
+    else:
+        messages.error(request, "Could not add to watchlist.")
+    return redirect("details", item_id=item_id, media_type=media_type)
+
+
+@login_required
+def watchlist(request):
+    items = Watchlist.objects.filter(user=request.user).order_by("-added_at")
+    return render(request, "movies/watchlist.html", {"watchlist": items})
+
+
+@login_required
+def remove_watchlist(request, wl_id):
+    item = Watchlist.objects.filter(id=wl_id, user=request.user).first()
+    if item:
+        title = item.title
+        item.delete()
+        messages.info(request, f'"{title}" removed from your watchlist.')
+    else:
+        messages.warning(request, "Watchlist item not found.")
+    return redirect("watchlist")

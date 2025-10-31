@@ -85,21 +85,30 @@
       <p class="overview">No overview available.</p>
     {% endif %}
 
-    {% if user.is_authenticated %}
-      {% if is_favorited %}
-        <button class="fav-btn added" disabled>★ In Favorites</button>
-      {% else %}
-        <form method="post" action="{% url 'add_favorite' item.id media_type %}">
-          {% csrf_token %}
-          <button type="submit" class="fav-btn">+ Add to Favorites</button>
-        </form>
-      {% endif %}
-    {% else %}
-    <p>
-     <a href="{% url 'login' %}" class="login-link">Log in</a>
-     <span class="login-spacer"> to add favorites.</span>
-    </p>
-    {% endif %}
+{% if user.is_authenticated %}
+  {% if is_favorited %}
+    <button class="fav-btn added" disabled>★ In Favorites</button>
+  {% else %}
+    <form method="post" action="{% url 'add_favorite' item.id media_type %}">
+      {% csrf_token %}
+      <button type="submit" class="fav-btn">+ Add to Favorites</button>
+    </form>
+  {% endif %}
+
+  {% if is_watchlisted %}
+    <button class="fav-btn added" style="margin-left:0.6rem" disabled>✓ In Watchlist</button>
+  {% else %}
+    <form method="post" action="{% url 'add_watchlist' item.id media_type %}" style="display:inline-block;margin-left:0.6rem">
+      {% csrf_token %}
+      <button type="submit" class="fav-btn">+ Add to Watchlist</button>
+    </form>
+  {% endif %}
+{% else %}
+  <p>
+    <a href="{% url 'login' %}" class="login-link">Log in</a>
+    <span class="login-spacer"> to add favorites or watchlist.</span>
+  </p>
+{% endif %}
   </div>
 </section>
 

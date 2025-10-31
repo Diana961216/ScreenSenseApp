@@ -1,0 +1,38 @@
+{% extends 'movies/base.html' %}
+{% load static %}
+
+{% block head %}
+<link rel="stylesheet" href="{% static 'movies/css/watchlist.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="watchlist-section">
+  <h2>Your Watchlist</h2>
+
+  {% if watchlist %}
+    <div class="watchlist-grid">
+      {% for w in watchlist %}
+        <div class="watchlist-card">
+          <a href="{% url 'details' w.tmdb_id w.media_type %}" class="card-link">
+            {% if w.poster_url %}
+              <img src="{{ w.poster_url }}" alt="{{ w.title }}" class="poster-img">
+            {% else %}
+              <div class="no-poster">No Image</div>
+            {% endif %}
+          </a>
+          <div class="info">
+            <h3>{{ w.title }}</h3>
+            <p class="type">{{ w.media_type|title }}</p>
+            <form method="post" action="{% url 'remove_watchlist' w.id %}">
+              {% csrf_token %}
+              <button type="submit" class="remove-btn">Remove</button>
+            </form>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="no-results">Your watchlist is empty.</p>
+  {% endif %}
+</section>
+{% endblock %}
