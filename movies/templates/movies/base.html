@@ -22,6 +22,7 @@
         <a href="{% url 'login' %}">Login</a>
         <a href="{% url 'signup' %}">Sign Up</a>
       {% endif %}
+      <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">🌙</button>
     </nav>
   </header>
 
@@ -39,5 +40,7 @@
   <footer>
     <p>© 2025 ScreenSense • Built with Django + TMDB</p>
   </footer>
+
+  <script src="{% static 'movies/js/theme.js' %}"></script>
 </body>
 </html>

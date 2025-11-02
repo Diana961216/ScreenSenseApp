@@ -10,6 +10,17 @@
   --font-main: "Poppins", sans-serif;
 }
 
+body[data-theme="light"] {
+  --bg-start: #ffffff;
+  --bg-end: #fdfdfd;
+  --card-bg: #ffffff;
+  --accent-blue: #0078d7;
+  --accent-hover: #005fa3;
+  --accent-red: #d62828;
+  --text-main: #1a1a1a;
+  --text-muted: #555b65;
+}
+
 body {
   font-family: var(--font-main);
   background: linear-gradient(to bottom, var(--bg-start), var(--bg-end));
@@ -19,6 +30,7 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  transition: background 0.4s ease, color 0.4s ease;
 }
 
 .navbar {
@@ -26,11 +38,18 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 1.2rem 2rem;
-  background-color: rgba(12, 17, 32, 0.8);
+  background-color: rgba(11, 19, 43, 0.95);
   backdrop-filter: blur(10px);
   position: sticky;
   top: 0;
   z-index: 10;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+  transition: background-color 0.4s ease, box-shadow 0.4s ease;
+}
+
+body[data-theme="light"] .navbar {
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .logo {
@@ -40,9 +59,14 @@ body {
   letter-spacing: 1px;
 }
 
+nav {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+}
+
 nav a {
   color: var(--text-muted);
-  margin-left: 1.5rem;
   text-decoration: none;
   font-weight: 500;
   transition: color 0.3s ease;
@@ -50,6 +74,51 @@ nav a {
 
 nav a:hover {
   color: var(--accent-hover);
+}
+
+body[data-theme="light"] nav a {
+  color: #2f3640;
+}
+
+body[data-theme="light"] nav a:hover {
+  color: var(--accent-blue);
+}
+
+.theme-toggle {
+  appearance: none;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  padding: 0;
+  margin-left: 0.6rem;
+  font-size: 1.4rem;
+  cursor: pointer;
+  color: var(--text-main);
+  transition: transform 0.25s ease, color 0.25s ease;
+}
+
+.theme-toggle:hover {
+  transform: scale(1.1);
+  color: var(--accent-hover);
+}
+
+.theme-toggle:focus,
+.theme-toggle:focus-visible,
+.theme-toggle:active {
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+body[data-theme="light"] .theme-toggle {
+  background: transparent !important;
+  color: #1a1a1a;
+}
+
+body[data-theme="light"] .theme-toggle:hover {
+  background: transparent !important;
+  color: var(--accent-blue);
 }
 
 main {
@@ -65,25 +134,81 @@ footer {
   font-size: 0.9rem;
   background-color: rgba(27, 38, 59, 0.6);
   backdrop-filter: blur(10px);
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+body[data-theme="light"] footer {
+  background-color: #fff;
+  color: #444;
+  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.05);
 }
 
 .messages {
   list-style: none;
-  padding: 0;
   margin: 1rem auto;
+  padding: 0;
   text-align: center;
   color: #ffd60a;
   font-weight: 500;
-  animation: fadeIn 0.3s ease;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-5px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+body[data-theme="light"] input,
+body[data-theme="light"] select,
+body[data-theme="light"] button {
+  background: #fff;
+  color: #1a1a1a;
+  border: 1px solid #dcdcdc;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+body[data-theme="light"] input::placeholder {
+  color: #666;
+}
+
+body[data-theme="light"] button {
+  background: var(--accent-blue);
+  color: #fff;
+  border: none;
+}
+
+body[data-theme="light"] button:hover {
+  background: var(--accent-hover);
+}
+
+body[data-theme="light"] .card,
+body[data-theme="light"] .favorite-card,
+body[data-theme="light"] .watchlist-card {
+  background: #fff;
+  color: #111;
+  border: 1px solid #e5e5e5;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+body[data-theme="light"] .info h3,
+body[data-theme="light"] .info p,
+body[data-theme="light"] .info .type {
+  color: #222 !important;
+}
+
+body[data-theme="light"] .badge,
+body[data-theme="light"] .provider-chip {
+  background: #f0f2f5;
+  border: 1px solid #d9d9d9;
+  color: #222 !important;
+}
+
+body[data-theme="light"] .no-poster {
+  background: #f4f4f4;
+  color: #555;
+}
+
+body[data-theme="light"] h2,
+body[data-theme="light"] h3 {
+  color: #111;
+}
+
+body[data-theme="light"] .details-container .overview,
+body[data-theme="light"] .details-container .genres,
+body[data-theme="light"] .details-container .year {
+  color: #222;
 }
