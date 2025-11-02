@@ -551,6 +551,10 @@ def signup_view(request):
             login(request, user)
             messages.success(request, "Account created successfully!")
             return redirect("home")
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field.capitalize()}: {error}")
     else:
         form = UserCreationForm()
     return render(request, "movies/signup.html", {"form": form})
@@ -564,6 +568,8 @@ def login_view(request):
             login(request, user)
             messages.success(request, f"Welcome back, {user.username}!")
             return redirect("home")
+        else:
+            messages.error(request, "Invalid username or password. Please try again.")
     else:
         form = AuthenticationForm()
     return render(request, "movies/login.html", {"form": form})

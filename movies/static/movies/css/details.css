@@ -67,7 +67,6 @@
 
 .fav-btn {
   display: inline-block;
-  margin-top: 1.4rem;
   border: none;
   border-radius: 10px;
   padding: 0.8rem 1.8rem;
@@ -115,6 +114,18 @@
   transform: none;
   box-shadow: 0 0 18px rgba(255, 230, 80, 0.9),
     inset 0 0 6px rgba(255, 250, 200, 1);
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.8rem;
+  margin-top: 1.5rem;
+}
+
+.action-buttons form {
+  margin: 0;
 }
 
 .cast-grid,
@@ -180,34 +191,6 @@
   font-size: 0.95rem;
 }
 
-@media (max-width: 768px) {
-  .details-container {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
-
-  .info {
-    text-align: center;
-  }
-
-  .poster img {
-    width: 260px;
-    height: 390px;
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(15px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 .providers {
   margin: 0.8rem 0 1rem;
   color: var(--text-main);
@@ -231,4 +214,36 @@
 
 .providers-empty {
   color: var(--text-muted);
+}
+
+@media (max-width: 768px) {
+  .details-container {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .info {
+    text-align: center;
+  }
+
+  .poster img {
+    width: 260px;
+    height: 390px;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
