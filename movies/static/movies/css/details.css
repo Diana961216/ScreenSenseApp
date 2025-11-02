@@ -15,7 +15,7 @@
 }
 
 .info {
-  max-width: 600px;
+  max-width: 580px;
   text-align: left;
 }
 
@@ -44,8 +44,10 @@
 
 .overview {
   margin-top: 1rem;
-  line-height: 1.5;
+  margin-bottom: 1rem;
+  line-height: 1.6;
   color: var(--text-main);
+  max-width: 520px;
 }
 
 .back-btn {
@@ -78,6 +80,7 @@
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
   cursor: pointer;
   transition: all 0.3s ease;
+  min-width: 180px;
 }
 
 .fav-btn:hover {
@@ -95,12 +98,11 @@
   border: none;
   border-radius: 10px;
   padding: 0.8rem 1.8rem;
+  min-width: 180px;
   box-shadow: 0 0 14px rgba(255, 220, 60, 0.8),
     inset 0 0 5px rgba(255, 250, 180, 0.95);
   cursor: default;
   pointer-events: none;
-  opacity: 1;
-  filter: none;
   text-shadow: 0 1px 2px rgba(255, 255, 255, 0.6);
   transition: all 0.3s ease;
 }
@@ -121,7 +123,8 @@
   justify-content: center;
   align-items: center;
   gap: 0.8rem;
-  margin-top: 1.5rem;
+  margin-top: 1.2rem;
+  margin-bottom: 1.8rem;
 }
 
 .action-buttons form {
@@ -216,6 +219,25 @@
   color: var(--text-muted);
 }
 
+.trailer-container {
+  margin-top: 1rem;
+  margin-bottom: 1.4rem;
+  width: 100%;
+  max-width: 560px;
+  aspect-ratio: 16 / 9;
+  background: #0b132b;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+}
+
+.trailer-iframe {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border: 0;
+}
+
 @media (max-width: 768px) {
   .details-container {
     flex-direction: column;
@@ -232,8 +254,17 @@
     height: 390px;
   }
 
+  .trailer-container {
+    max-width: 90%;
+  }
+
+  .overview {
+    max-width: 90%;
+  }
+
   .action-buttons {
     flex-direction: column;
+    gap: 0.6rem;
   }
 }
 

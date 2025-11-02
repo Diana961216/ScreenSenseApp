@@ -488,13 +488,31 @@ def home(request):
 def details(request, item_id, media_type):
     api_key = os.getenv("TMDB_API_KEY")
     url = f"{TMDB_BASE}/{media_type}/{item_id}"
-    params = {"api_key": api_key, "append_to_response": "credits,similar"}
+    params = {"api_key": api_key, "append_to_response": "credits,similar,videos"}
     response = requests.get(url, params=params)
 
     if response.status_code == 200:
         data = response.json()
         cast = data.get("credits", {}).get("cast", [])[:5]
         similar = data.get("similar", {}).get("results", [])[:8]
+
+        trailer_key = None
+        try:
+            videos = (data.get("videos") or {}).get("results", []) or []
+            if videos:
+
+                def score(v):
+                    site_ok = 1 if v.get("site") == "YouTube" else 0
+                    official = 1 if v.get("official") else 0
+                    vtype = v.get("type") or ""
+                    kind = 2 if vtype == "Trailer" else (1 if vtype == "Teaser" else 0)
+                    return (site_ok, official, kind)
+
+                candidate = sorted(videos, key=score, reverse=True)[0]
+                if candidate.get("site") == "YouTube" and candidate.get("key"):
+                    trailer_key = candidate["key"]
+        except Exception:
+            trailer_key = None
 
         watch_providers = []
         try:
@@ -537,6 +555,7 @@ def details(request, item_id, media_type):
             "is_favorited": is_favorited,
             "is_watchlisted": is_watchlisted,
             "watch_providers": watch_providers,
+            "trailer_key": trailer_key,
         }
         return render(request, "movies/details.html", context)
 

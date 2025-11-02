@@ -89,6 +89,20 @@
       <p class="overview">No overview available.</p>
     {% endif %}
 
+    {% if trailer_key %}
+      <div class="trailer-container">
+        <iframe
+          class="trailer-iframe"
+          src="https://www.youtube.com/embed/{{ trailer_key }}"
+          title="YouTube trailer"
+          frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          referrerpolicy="strict-origin-when-cross-origin"
+          allowfullscreen>
+        </iframe>
+      </div>
+    {% endif %}
+
     {% if user.is_authenticated %}
     <div class="action-buttons">
       {% if is_favorited %}
