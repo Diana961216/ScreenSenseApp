@@ -1,0 +1,56 @@
+{% extends 'movies/base.html' %}
+{% load static %}
+
+{% block head %}
+<link rel="stylesheet" href="{% static 'movies/css/upcoming.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<section class="results-container">
+  <h2 class="section-subtitle">🎬 Upcoming Movie Premieres</h2>
+  {% if upcoming_movies %}
+  <div class="results-grid scrollable">
+    {% for item in upcoming_movies %}
+      <a href="{% url 'details' item.id item.media_type %}" class="card">
+        {% if item.poster %}
+          <img src="{{ item.poster }}" alt="{{ item.title }}" class="poster-img">
+        {% else %}
+          <div class="no-poster">No Image</div>
+        {% endif %}
+        <div class="info">
+          <h3>{{ item.title }}</h3>
+          <span class="type badge badge-movie">Movie</span>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+  {% else %}
+    <p class="no-results">No upcoming movies found.</p>
+  {% endif %}
+</section>
+
+<section class="results-container">
+  <h2 class="section-subtitle">📡 On The Air TV Shows</h2>
+  {% if on_air_tv %}
+  <div class="results-grid scrollable">
+    {% for item in on_air_tv %}
+      <a href="{% url 'details' item.id item.media_type %}" class="card">
+        {% if item.poster %}
+          <img src="{{ item.poster }}" alt="{{ item.title }}" class="poster-img">
+        {% else %}
+          <div class="no-poster">No Image</div>
+        {% endif %}
+        <div class="info">
+          <h3>{{ item.title }}</h3>
+          <span class="type badge badge-tv">TV Show</span>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+  {% else %}
+    <p class="no-results">No shows currently airing.</p>
+  {% endif %}
+</section>
+
+{% endblock %}

@@ -18,7 +18,7 @@
       required
     >
     <select name="type" class="search-type">
-      <option value="title" {% if search_type == "title" or not search_type %}selected{% endif %}>Title</option>
+      <option value="title" {% if search_type == "title" %}selected{% endif %}>Title</option>
       <option value="actor" {% if search_type == "actor" %}selected{% endif %}>Actor</option>
       <option value="genre" {% if search_type == "genre" %}selected{% endif %}>Genre</option>
     </select>
@@ -39,7 +39,7 @@
 
 {% if not query %}
 
-  {% if trending and media == "all" or trending and media == "movie" %}
+  {% if trending %}
   <section class="results-container">
     <h3 class="section-subtitle">🔥 Trending Movies</h3>
     <div class="results-grid scrollable">
@@ -60,7 +60,7 @@
   </section>
   {% endif %}
 
-  {% if popular_tv and media == "all" or popular_tv and media == "tv" %}
+  {% if popular_tv %}
   <section class="results-container">
     <h3 class="section-subtitle">📺 Popular TV Shows</h3>
     <div class="results-grid scrollable">
@@ -81,9 +81,51 @@
   </section>
   {% endif %}
 
+  {% if upcoming_movies %}
+  <section class="results-container">
+    <h3 class="section-subtitle">🎬 Upcoming Movies</h3>
+    <div class="results-grid scrollable">
+      {% for item in upcoming_movies %}
+        <a href="{% url 'details' item.id item.media_type %}" class="card">
+          {% if item.poster %}
+            <img src="{{ item.poster }}" alt="{{ item.title }}" class="poster-img">
+          {% else %}
+            <div class="no-poster">No Image</div>
+          {% endif %}
+          <div class="info">
+            <h3>{{ item.title }}</h3>
+            <span class="type badge badge-movie">Movie</span>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if on_air_tv %}
+  <section class="results-container">
+    <h3 class="section-subtitle">📡 Currently Airing TV Shows</h3>
+    <div class="results-grid scrollable">
+      {% for item in on_air_tv %}
+        <a href="{% url 'details' item.id item.media_type %}" class="card">
+          {% if item.poster %}
+            <img src="{{ item.poster }}" alt="{{ item.title }}" class="poster-img">
+          {% else %}
+            <div class="no-poster">No Image</div>
+          {% endif %}
+          <div class="info">
+            <h3>{{ item.title }}</h3>
+            <span class="type badge badge-tv">TV Show</span>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
   {% if personalized_suggestions %}
   <section class="results-container">
-    <h3 class="section-subtitle">🎯 Because you liked...</h3>
+    <h3 class="section-subtitle">🎯 Because You Liked...</h3>
     <div class="results-grid scrollable">
       {% for item in personalized_suggestions %}
         <a href="{% url 'details' item.id item.media_type %}" class="card">
@@ -104,50 +146,5 @@
   </section>
   {% endif %}
 
-{% endif %}
-
-{% if results %}
-<section class="results-container{% if results|length == 1 %} one{% endif %}">
-  <div class="results-grid {% if results|length == 1 %}single{% endif %}">
-    {% for item in results %}
-      <a href="{% url 'details' item.id item.media_type %}" class="card">
-        {% if item.poster %}
-          <img src="{{ item.poster }}" alt="{{ item.title }}" class="poster-img">
-        {% else %}
-          <div class="no-poster">No Image</div>
-        {% endif %}
-        <div class="info">
-          <h3>{{ item.title }}</h3>
-          {% if item.release %}
-            <p class="year">{{ item.release|slice:":4" }}</p>
-          {% endif %}
-          <span class="type badge {% if item.media_type == 'movie' %}badge-movie{% else %}badge-tv{% endif %}">
-            {{ item.media_type|title }}
-          </span>
-          {% if item.overview %}
-            <p class="overview">{{ item.overview|truncatewords:20 }}</p>
-          {% else %}
-            <p class="overview">No overview available.</p>
-          {% endif %}
-        </div>
-      </a>
-    {% endfor %}
-  </div>
-
-  {% if query and next_page or query and prev_page %}
-  <div class="pagination-controls">
-    {% if prev_page %}
-      <a href="?q={{ query }}&page={{ prev_page }}&type={{ search_type }}&media={{ media }}" class="page-btn prev">← Previous</a>
-    {% endif %}
-    <span class="page-info">Page {{ page }}</span>
-    {% if next_page %}
-      <a href="?q={{ query }}&page={{ next_page }}&type={{ search_type }}&media={{ media }}" class="page-btn next">Next →</a>
-    {% endif %}
-  </div>
-  {% endif %}
-</section>
-
-{% elif query %}
-<p class="no-results">No results found for "{{ query }}".</p>
 {% endif %}
 {% endblock %}

@@ -1,14 +1,14 @@
 from django.shortcuts import render, redirect
 import os, requests
 from dotenv import load_dotenv
-from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth import login, logout
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from collections import Counter
 from .models import Favorite, Watchlist
-from difflib import get_close_matches, SequenceMatcher
+from difflib import SequenceMatcher
 
 load_dotenv()
 
@@ -43,19 +43,7 @@ def best_name_match(search_name, candidates):
             best_score = total_score
             best = cand
 
-    if best_score >= 0.68:
-        return best
-
-    if last_search:
-        for cand in candidates:
-            if last_search in cand.lower():
-                return cand
-
-    for cand in candidates:
-        if search in cand.lower():
-            return cand
-
-    return None
+    return best if best_score >= 0.68 else None
 
 
 def get_personalized_suggestions(user):
@@ -97,29 +85,6 @@ def get_personalized_suggestions(user):
         except Exception:
             continue
 
-    if not genre_counts and not keyword_counts and not person_counts:
-        try:
-            res = requests.get(
-                f"{TMDB_BASE}/trending/movie/week", params={"api_key": api_key}
-            )
-            data = res.json().get("results", [])[:10]
-            return [
-                {
-                    "id": item.get("id"),
-                    "title": item.get("title") or item.get("name"),
-                    "poster": (
-                        f"{IMAGE_BASE}{item.get('poster_path')}"
-                        if item.get("poster_path")
-                        else None
-                    ),
-                    "media_type": "movie",
-                }
-                for item in data
-                if item.get("poster_path")
-            ]
-        except Exception:
-            return []
-
     top_genres = [str(gid) for gid, _ in genre_counts.most_common(3)]
     top_keywords = [str(kid) for kid, _ in keyword_counts.most_common(5)]
     top_people = [str(pid) for pid, _ in person_counts.most_common(3)]
@@ -156,32 +121,6 @@ def get_personalized_suggestions(user):
         except Exception:
             continue
 
-    if not suggestions and top_genres:
-        for media_type in ["movie", "tv"]:
-            try:
-                res = requests.get(
-                    f"{TMDB_BASE}/discover/{media_type}",
-                    params={
-                        "api_key": api_key,
-                        "with_genres": ",".join(top_genres),
-                        "page": 1,
-                    },
-                )
-                if res.status_code == 200:
-                    for item in res.json().get("results", [])[:10]:
-                        poster = item.get("poster_path")
-                        if poster:
-                            suggestions.append(
-                                {
-                                    "id": item.get("id"),
-                                    "title": item.get("title") or item.get("name"),
-                                    "poster": f"{IMAGE_BASE}{poster}",
-                                    "media_type": media_type,
-                                }
-                            )
-            except Exception:
-                continue
-
     favorite_keys = {(f.media_type, f.tmdb_id) for f in favorites}
     seen = set()
     unique = []
@@ -203,6 +142,7 @@ def home(request):
     search_type = request.GET.get("type", "title")
     media_filter = request.GET.get("media", "all")
     page = int(request.GET.get("page", 1))
+
     results = []
     trending = []
     popular_tv = []
@@ -213,7 +153,72 @@ def home(request):
     RESULTS_PER_PAGE = 15
     MAX_TMDB_PAGES_TO_SCAN = 10
 
-    if query and search_type == "actor":
+    if query and search_type == "title":
+
+        def fetch_tmdb_page(q, tmdb_page):
+            url = f"{TMDB_BASE}/search/multi"
+            params = {
+                "api_key": api_key,
+                "query": q,
+                "include_adult": "false",
+                "page": tmdb_page,
+            }
+            r = requests.get(url, params=params)
+            if r.status_code != 200:
+                return [], 0
+            data = r.json()
+            filtered = []
+            for item in data.get("results", []):
+                if item.get("media_type") not in ["movie", "tv"]:
+                    continue
+                title = item.get("title") or item.get("name")
+                release = item.get("release_date") or item.get("first_air_date")
+                poster = item.get("poster_path")
+                overview = item.get("overview")
+                media_type = item.get("media_type")
+                filtered.append(
+                    {
+                        "id": item.get("id"),
+                        "title": title,
+                        "release": release,
+                        "poster": f"{IMAGE_BASE}{poster}" if poster else None,
+                        "overview": overview,
+                        "media_type": media_type,
+                    }
+                )
+            return filtered, data.get("total_pages", 1)
+
+        start = (page - 1) * RESULTS_PER_PAGE
+        end = start + RESULTS_PER_PAGE
+        collected = []
+        seen = set()
+        tmdb_page = 1
+        tmdb_total_pages = 1
+
+        while (
+            len(collected) < end + 1
+            and tmdb_page <= tmdb_total_pages
+            and tmdb_page <= MAX_TMDB_PAGES_TO_SCAN
+        ):
+            page_items, tmdb_total_pages = fetch_tmdb_page(query, tmdb_page)
+            for it in page_items:
+                key = (it["media_type"], it["id"])
+                if key in seen:
+                    continue
+                seen.add(key)
+                collected.append(it)
+                if len(collected) >= end + 1:
+                    break
+            tmdb_page += 1
+
+        if media_filter in ("movie", "tv"):
+            collected = [it for it in collected if it["media_type"] == media_filter]
+
+        results = collected[start:end] if start < len(collected) else []
+        prev_page = page - 1 if page > 1 and start > 0 else None
+        next_page = page + 1 if len(collected) > end else None
+
+    elif query and search_type == "actor":
         search_name = query.strip()
         r = requests.get(
             f"{TMDB_BASE}/search/person",
@@ -224,16 +229,12 @@ def home(request):
                 "include_adult": "false",
             },
         )
-
-        data = []
-        if r.status_code == 200:
-            data = r.json().get("results", [])
+        data = r.json().get("results", []) if r.status_code == 200 else []
 
         if not data:
             simplified = "".join(
                 ch for ch in search_name if ch.isalpha() or ch.isspace()
-            )
-            simplified = simplified.replace("nn", "n").replace("ff", "f").strip()
+            ).strip()
             second_try = requests.get(
                 f"{TMDB_BASE}/search/person",
                 params={
@@ -249,40 +250,6 @@ def home(request):
                     best = second_data[0]
                     return redirect(
                         "actor_search", person_id=best["id"], name=best["name"]
-                    )
-
-            fallback_names = []
-            for page_num in range(1, 6):
-                try:
-                    pop = requests.get(
-                        f"{TMDB_BASE}/person/popular",
-                        params={"api_key": api_key, "page": page_num},
-                    )
-                    if pop.status_code == 200:
-                        fallback_names.extend(pop.json().get("results", []))
-                except Exception:
-                    continue
-
-            if fallback_names:
-                names = [p.get("name", "") for p in fallback_names if p.get("name")]
-                best = best_name_match(search_name, names)
-                if best:
-                    for p in fallback_names:
-                        if p.get("name") == best:
-                            return redirect(
-                                "actor_search", person_id=p["id"], name=p["name"]
-                            )
-
-            search_fallback = requests.get(
-                f"{TMDB_BASE}/search/person",
-                params={"api_key": api_key, "query": search_name, "page": 1},
-            )
-            if search_fallback.status_code == 200:
-                results_people = search_fallback.json().get("results", [])
-                if results_people:
-                    top = results_people[0]
-                    return redirect(
-                        "actor_search", person_id=top["id"], name=top["name"]
                     )
 
         if data:
@@ -301,11 +268,10 @@ def home(request):
                 )
 
         messages.warning(
-            request,
-            f'No actor found for "{query}". Try checking spelling or shortening the name.',
+            request, f'No actor found for "{query}". Try checking spelling.'
         )
 
-    if query and search_type == "genre":
+    elif query and search_type == "genre":
         gid = None
         try:
             g_res = requests.get(
@@ -351,85 +317,14 @@ def home(request):
                 "media": media_filter,
                 "trending": [],
                 "popular_tv": [],
-                "personalized_suggestions": [],
                 "page": page,
                 "next_page": None,
                 "prev_page": None,
             },
         )
 
-    def fetch_tmdb_page(q, tmdb_page):
-        url = f"{TMDB_BASE}/search/multi"
-        params = {
-            "api_key": api_key,
-            "query": q,
-            "include_adult": "false",
-            "page": tmdb_page,
-        }
-        r = requests.get(url, params=params)
-        if r.status_code != 200:
-            return [], 0
-        data = r.json()
-        filtered = []
-        for item in data.get("results", []):
-            if item.get("media_type") not in ["movie", "tv"]:
-                continue
-            title = item.get("title") or item.get("name")
-            release = item.get("release_date") or item.get("first_air_date")
-            poster = item.get("poster_path")
-            overview = item.get("overview")
-            media_type = item.get("media_type")
-            filtered.append(
-                {
-                    "id": item.get("id"),
-                    "title": title,
-                    "release": release,
-                    "poster": f"{IMAGE_BASE}{poster}" if poster else None,
-                    "overview": overview,
-                    "media_type": media_type,
-                }
-            )
-        return filtered, data.get("total_pages", 1)
-
-    if query and search_type == "title":
-        start = (page - 1) * RESULTS_PER_PAGE
-        end = start + RESULTS_PER_PAGE
-
-        collected = []
-        seen = set()
-        tmdb_page = 1
-        tmdb_total_pages = 1
-
-        while (
-            len(collected) < end + 1
-            and tmdb_page <= tmdb_total_pages
-            and tmdb_page <= MAX_TMDB_PAGES_TO_SCAN
-        ):
-            page_items, tmdb_total_pages = fetch_tmdb_page(query, tmdb_page)
-            for it in page_items:
-                key = (it["media_type"], it["id"])
-                if key in seen:
-                    continue
-                seen.add(key)
-                collected.append(it)
-                if len(collected) >= end + 1:
-                    break
-            tmdb_page += 1
-
-        if media_filter in ("movie", "tv"):
-            collected = [it for it in collected if it["media_type"] == media_filter]
-
-        results = collected[start:end] if start < len(collected) else []
-        prev_page = (
-            page - 1
-            if page > 1 and start > 0
-            else (page - 1 if page > 1 and collected else None)
-        )
-        next_page = page + 1 if len(collected) > end else None
-
-    elif not query:
+    else:
         params = {"api_key": api_key}
-
         if media_filter in ("all", "movie"):
             t_res = requests.get(f"{TMDB_BASE}/trending/movie/week", params=params)
             if t_res.status_code == 200:
@@ -446,7 +341,6 @@ def home(request):
                             "media_type": "movie",
                         }
                     )
-
         if media_filter in ("all", "tv"):
             p_res = requests.get(f"{TMDB_BASE}/tv/popular", params=params)
             if p_res.status_code == 200:
@@ -483,6 +377,63 @@ def home(request):
         "prev_page": prev_page,
     }
     return render(request, "movies/home.html", context)
+
+
+def upcoming_premieres(request):
+    api_key = os.getenv("TMDB_API_KEY")
+    upcoming_movies, on_air_tv, personalized_suggestions = [], [], []
+    params = {"api_key": api_key}
+
+    try:
+        up_res = requests.get(f"{TMDB_BASE}/movie/upcoming", params=params)
+        if up_res.status_code == 200:
+            for item in up_res.json().get("results", [])[:15]:
+                upcoming_movies.append(
+                    {
+                        "id": item.get("id"),
+                        "title": item.get("title"),
+                        "poster": (
+                            f"{IMAGE_BASE}{item.get('poster_path')}"
+                            if item.get("poster_path")
+                            else None
+                        ),
+                        "media_type": "movie",
+                    }
+                )
+    except Exception as e:
+        print("Error fetching upcoming movies:", e)
+
+    try:
+        air_res = requests.get(f"{TMDB_BASE}/tv/on_the_air", params=params)
+        if air_res.status_code == 200:
+            for item in air_res.json().get("results", [])[:15]:
+                on_air_tv.append(
+                    {
+                        "id": item.get("id"),
+                        "title": item.get("name"),
+                        "poster": (
+                            f"{IMAGE_BASE}{item.get('poster_path')}"
+                            if item.get("poster_path")
+                            else None
+                        ),
+                        "media_type": "tv",
+                    }
+                )
+    except Exception as e:
+        print("Error fetching on-air TV:", e)
+
+    if (
+        request.user.is_authenticated
+        and Favorite.objects.filter(user=request.user).exists()
+    ):
+        personalized_suggestions = get_personalized_suggestions(request.user)
+
+    context = {
+        "upcoming_movies": upcoming_movies,
+        "on_air_tv": on_air_tv,
+        "personalized_suggestions": personalized_suggestions,
+    }
+    return render(request, "movies/upcoming.html", context)
 
 
 def details(request, item_id, media_type):

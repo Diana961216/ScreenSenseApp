@@ -1,0 +1,124 @@
+.results-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 0 4rem;
+  animation: fadeIn 0.4s ease;
+}
+
+.section-subtitle {
+  color: var(--text-main);
+  font-size: 1.6rem;
+  font-weight: 600;
+  margin-bottom: 1.2rem;
+  text-align: center;
+}
+
+.results-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.8rem;
+  max-width: 1200px;
+  width: 100%;
+  padding: 0 2rem;
+}
+
+.scrollable {
+  overflow-x: auto;
+  display: flex;
+  gap: 1.5rem;
+  padding: 0 1rem 1rem;
+  scroll-behavior: smooth;
+}
+
+.scrollable::-webkit-scrollbar {
+  height: 8px;
+}
+.scrollable::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+}
+
+.card {
+  background: var(--card-bg);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.45);
+  width: 240px;
+  height: 420px;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.25s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 10px 22px rgba(58, 134, 255, 0.45);
+}
+
+.poster-img {
+  width: 100%;
+  height: 340px;
+  object-fit: cover;
+  border-bottom: 1px solid #1e2a42;
+}
+
+.no-poster {
+  width: 100%;
+  height: 340px;
+  background: #1b263b;
+  color: #7a869a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.info {
+  padding: 0.8rem;
+  text-align: center;
+}
+
+.info h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin: 0.2rem 0 0.3rem 0;
+}
+
+.badge {
+  display: inline-block;
+  margin-top: 0.15rem;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 999px;
+  background: rgba(27, 38, 59, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #dbe4ff;
+}
+
+.badge-movie {
+  color: #ffd166;
+}
+.badge-tv {
+  color: #6ee7ff;
+}
+
+.no-results {
+  color: var(--text-muted);
+  font-size: 1rem;
+  margin-top: 1rem;
+  text-align: center;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
