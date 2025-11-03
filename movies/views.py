@@ -400,8 +400,8 @@ def upcoming_premieres(request):
                         "media_type": "movie",
                     }
                 )
-    except Exception as e:
-        print("Error fetching upcoming movies:", e)
+    except Exception:
+        pass
 
     try:
         air_res = requests.get(f"{TMDB_BASE}/tv/on_the_air", params=params)
@@ -419,8 +419,8 @@ def upcoming_premieres(request):
                         "media_type": "tv",
                     }
                 )
-    except Exception as e:
-        print("Error fetching on-air TV:", e)
+    except Exception:
+        pass
 
     if (
         request.user.is_authenticated
