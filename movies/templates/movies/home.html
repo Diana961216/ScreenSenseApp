@@ -37,7 +37,45 @@
   {% endif %}
 </section>
 
-{% if not query %}
+{% if query %}
+  {% if results %}
+  <section class="results-container">
+    <h3 class="section-subtitle">🔍 Search Results for “{{ query }}”</h3>
+    <div class="results-grid">
+      {% for item in results %}
+        <a href="{% url 'details' item.id item.media_type %}" class="card">
+          {% if item.poster %}
+            <img src="{{ item.poster }}" alt="{{ item.title }}" class="poster-img">
+          {% else %}
+            <div class="no-poster">No Image</div>
+          {% endif %}
+          <div class="info">
+            <h3>{{ item.title }}</h3>
+            <p class="year">
+              {% if item.release %}
+                {{ item.release|slice:":4" }}
+              {% endif %}
+            </p>
+            <p class="type">{{ item.media_type|title }}</p>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+
+    <div class="pagination-controls">
+      {% if prev_page %}
+        <a href="?q={{ query }}&type={{ search_type }}&media={{ media }}&page={{ prev_page }}" class="page-btn prev">← Previous</a>
+      {% endif %}
+      <span class="page-info">Page {{ page }}</span>
+      {% if next_page %}
+        <a href="?q={{ query }}&type={{ search_type }}&media={{ media }}&page={{ next_page }}" class="page-btn next">Next →</a>
+      {% endif %}
+    </div>
+  </section>
+  {% else %}
+    <p class="no-results">No results found for “{{ query }}”. Try a different search.</p>
+  {% endif %}
+{% else %}
 
   {% if trending %}
   <section class="results-container">
@@ -65,48 +103,6 @@
     <h3 class="section-subtitle">📺 Popular TV Shows</h3>
     <div class="results-grid scrollable">
       {% for item in popular_tv %}
-        <a href="{% url 'details' item.id item.media_type %}" class="card">
-          {% if item.poster %}
-            <img src="{{ item.poster }}" alt="{{ item.title }}" class="poster-img">
-          {% else %}
-            <div class="no-poster">No Image</div>
-          {% endif %}
-          <div class="info">
-            <h3>{{ item.title }}</h3>
-            <span class="type badge badge-tv">TV Show</span>
-          </div>
-        </a>
-      {% endfor %}
-    </div>
-  </section>
-  {% endif %}
-
-  {% if upcoming_movies %}
-  <section class="results-container">
-    <h3 class="section-subtitle">🎬 Upcoming Movies</h3>
-    <div class="results-grid scrollable">
-      {% for item in upcoming_movies %}
-        <a href="{% url 'details' item.id item.media_type %}" class="card">
-          {% if item.poster %}
-            <img src="{{ item.poster }}" alt="{{ item.title }}" class="poster-img">
-          {% else %}
-            <div class="no-poster">No Image</div>
-          {% endif %}
-          <div class="info">
-            <h3>{{ item.title }}</h3>
-            <span class="type badge badge-movie">Movie</span>
-          </div>
-        </a>
-      {% endfor %}
-    </div>
-  </section>
-  {% endif %}
-
-  {% if on_air_tv %}
-  <section class="results-container">
-    <h3 class="section-subtitle">📡 Currently Airing TV Shows</h3>
-    <div class="results-grid scrollable">
-      {% for item in on_air_tv %}
         <a href="{% url 'details' item.id item.media_type %}" class="card">
           {% if item.poster %}
             <img src="{{ item.poster }}" alt="{{ item.title }}" class="poster-img">
