@@ -8,7 +8,9 @@
 
 **ScreenSense** is a Django-based web application that helps users discover, explore, and track movies and TV shows using the [TMDB API](https://www.themoviedb.org/documentation/api).
 
-Visitors can browse trending titles, search for specific shows or movies, and view detailed information. Authenticated users can create accounts, save favorites, add shows to their watchlist, and receive personalized recommendations based on their preferences.
+Visitors can browse trending titles, search for specific shows or movies, and view detailed information.
+
+Users can create personalized experiences by signing up or logging in to manage their own favorites and watchlists, watch trailers, check streaming availability, and explore upcoming premieres. They also receive intelligent recommendations based on their saved preferences.
 
 The app was built to make movie discovery smarter and more personalized — combining clean design, curated data, and AI-style recommendation logic to make entertainment discovery enjoyable and simple.
 
